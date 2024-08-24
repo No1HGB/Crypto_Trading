@@ -8,6 +8,9 @@ numpy = "*"
 pandas = "*"
 binance-futures-connector = "*"
 scikit-learn = "*"
+pytz = "*"
+python-dotenv = "*"
+requests = "*"
 
 [dev-packages]
 
