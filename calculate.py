@@ -157,3 +157,47 @@ def backtest_X_data(df: pd.DataFrame):
         x_data.append(x)
 
     return np.array(x_data)
+
+
+def make_spot_data(df: pd.DataFrame, window: int):
+    columns = [
+        "open_time",
+        "close_time",
+        "delta",
+        "up_delta",
+        "down_delta",
+        "d10",
+        "d20",
+        "d50",
+        "d200",
+        "e_d10",
+        "e_d20",
+        "e_d50",
+        "e_d200",
+        "volume_delta",
+        "volume_ratio",
+        "ha_delta",
+        "ha_up_delta",
+        "ha_down_delta",
+    ]
+    x_data = []
+    y_data = []
+
+    selected_df = df[columns]
+    for i in range(df.shape[0] - window):
+        open = df.iloc[i + 1]["open"]
+        close = df.iloc[i + window]["close"]
+        if close > open:
+            y_data.append(1)
+
+        else:
+            y_data.append(0)
+
+        x = selected_df.iloc[i].values
+        x_data.append(x)
+
+    real_x_data = []
+    real_x = selected_df.iloc[-1].values
+    real_x_data.append(real_x)
+
+    return np.array(x_data), np.array(y_data), np.array(real_x_data)

@@ -1,6 +1,7 @@
 import pandas as pd
 import datetime
 from binance.um_futures import UMFutures
+from binance.spot import Spot
 
 
 # fetch_data 를 위한 함수, 정해진 개수의 데이터 가져옴
@@ -9,9 +10,13 @@ def fetch_one_data(
     interval: str,
     end_time: int,
     limit: int,
+    type: str = "future",
 ) -> pd.DataFrame:
 
     client = UMFutures()
+    if type == "spot":
+        client = Spot()
+
     bars = client.klines(
         symbol=symbol, interval=interval, endTime=end_time, limit=limit
     )
@@ -56,6 +61,7 @@ def fetch_data(
     symbol: str,
     interval: str,
     numbers: int,
+    type: str = "future",
 ) -> pd.DataFrame:
 
     end_datetime = datetime.datetime.now(datetime.UTC)
@@ -88,6 +94,7 @@ def fetch_data(
             interval=interval,
             end_time=end_time,
             limit=num,
+            type=type,
         )
         if df.empty:
             break
