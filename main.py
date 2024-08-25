@@ -3,7 +3,7 @@ import joblib
 
 import config
 from preprocess import cal_values, x_data
-from fetch import fetch_data
+from fetch import fetch_data_async
 from calculate import cal_stop_price
 from util import (
     setup_logging,
@@ -34,7 +34,7 @@ async def main(symbol, leverage, interval):
 
     # 첫 시작 시 모델 훈련 및 저장 / 해당 심볼 레버리지 변경
     if start == 0:
-        df = await fetch_data(symbol, interval, 1200)
+        df = await fetch_data_async(symbol, interval, 1080)
         df = cal_values(df)
         await training_and_save_model(symbol, df, model_dir, sl_ratio)
         await change_leverage(key, secret, symbol, leverage)
@@ -47,7 +47,7 @@ async def main(symbol, leverage, interval):
         logging.info(f"{symbol} {interval} next interval")
 
         # 데이터 로드
-        df = await fetch_data(symbol, interval, 1200)
+        df = await fetch_data_async(symbol, interval, 1080)
         df = cal_values(df)
         last_row = df.iloc[-1]
 

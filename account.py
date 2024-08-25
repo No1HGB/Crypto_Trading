@@ -48,7 +48,6 @@ async def change_leverage(key, secret, symbol, leverage):
         um_futures_client.change_leverage,
         symbol=symbol,
         leverage=leverage,
-        recvWindow=1000,
     )
     try:
         await loop.run_in_executor(None, func)

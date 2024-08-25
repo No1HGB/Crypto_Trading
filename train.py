@@ -36,7 +36,7 @@ async def training_and_save_model(
     accuracy_val = accuracy_score(y_val, y_pred_val)
 
     # 정확도 70% 이상인 경우 모델 저장
-    if accuracy_val >= 0.7:
+    if accuracy_val >= 0.70:
         joblib.dump(model, model_dir)
         logging.info(f"{symbol} accuracy: {accuracy_val}\nModel save successfully.")
     else:
