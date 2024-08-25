@@ -3,7 +3,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import accuracy_score
 
 from fetch import fetch_data
-from calculate import cal_values, make_spot_data
+from preprocess import cal_values, make_spot_data
 
 
 df = fetch_data("BTCUSDT", "1h", 720, "spot")

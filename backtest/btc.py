@@ -2,7 +2,7 @@ import pandas as pd
 import joblib
 
 from fetch import fetch_data
-from calculate import cal_values, backtest_X_data
+from preprocess import cal_values, backtest_X_data
 
 
 # 초기값 설정
@@ -28,7 +28,7 @@ df = cal_values(df)
 X_data = backtest_X_data(df)
 
 # 모델
-model_dir = f"model/gb_classifier_btc.pkl"
+model_dir = f"models/gb_classifier_btc.pkl"
 model = joblib.load(model_dir)
 
 # 백테스트 실행

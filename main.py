@@ -1,0 +1,156 @@
+import logging, asyncio, os
+import joblib
+
+import config
+from preprocess import cal_values, x_data
+from fetch import fetch_data
+from calculate import cal_stop_price
+from util import (
+    setup_logging,
+    wait_until_next_interval,
+    format_quantity,
+    server_connect,
+)
+from account import (
+    get_position,
+    get_balance,
+    change_leverage,
+    open_position,
+    tp_sl,
+    cancel_orders,
+)
+from train import training_and_save_model
+
+
+async def main(symbol, leverage, interval):
+    key = config.key
+    secret = config.secret
+    ratio = config.ratio
+    start = 0
+    pred = 0
+    sl_ratio = config.stop_ratio
+    model_dir = f"models/gb_classifier_{symbol}.pkl"
+
+    logging.info(f"{symbol} {interval} trading program start")
+
+    # 첫 시작 시 모델 훈련 및 저장
+    if start == 0:
+        df = await fetch_data(symbol, interval, 1200)
+        df = cal_values(df)
+        await training_and_save_model(symbol, df, model_dir, sl_ratio)
+        # 해당 심볼 레버리지 변경(처음 시작 시)
+        await change_leverage(key, secret, symbol, leverage)
+        start += 1
+
+    while True:
+        # 정시까지 기다리기
+        await wait_until_next_interval(interval=interval)
+        logging.info(f"{symbol} {interval} next interval")
+
+        # 데이터 로드
+        df = await fetch_data(symbol, interval, 1200)
+        df = cal_values(df)
+        last_row = df.iloc[-1]
+
+        # 예측 결과 가져오기
+        if os.path.exists(model_dir):
+            model = joblib.load(model_dir)
+            X_data = x_data(last_row)
+            pred = model.predict(X_data)
+        else:
+            logging.info(f"{model_dir} not exist")
+
+        position = await get_position(key, secret, symbol)
+        positionAmt = float(position["positionAmt"])
+
+        # 해당 포지션이 있는 경우, 포지션 종료 로직
+        if positionAmt > 0:
+
+            if pred == 1:
+                await tp_sl(key, secret, symbol, "SELL", positionAmt)
+                logging.info(f"{symbol} {interval} long position all close")
+                await asyncio.sleep(1.5)
+
+        elif positionAmt < 0:
+            positionAmt = abs(positionAmt)
+
+            if pred == 2:
+                await tp_sl(key, secret, symbol, "BUY", positionAmt)
+                logging.info(f"{symbol} {interval} short position all close")
+                await asyncio.sleep(1.5)
+
+        # 포지션 다시 가져오기(종료된 경우 고려)
+        position = await get_position(key, secret, symbol)
+        positionAmt = float(position["positionAmt"])
+        [balance, available] = await get_balance(key, secret)
+
+        # 해당 포지션이 없고 마진이 있는 경우 포지션 진입
+        if positionAmt == 0 and (balance * (ratio / 100) < available):
+
+            await cancel_orders(key, secret, symbol)
+            logging.info(f"{symbol} open orders cancel")
+
+            # 롱
+            if pred == 2:
+
+                entryPrice = last_row["close"]
+                raw_quantity = balance * (ratio / 100) / entryPrice * leverage
+                quantity = format_quantity(raw_quantity, symbol)
+                stopPrice = cal_stop_price(entryPrice, "BUY", symbol)
+
+                await open_position(
+                    key,
+                    secret,
+                    symbol,
+                    "BUY",
+                    quantity,
+                    "SELL",
+                    stopPrice,
+                )
+
+                # 로그 기록
+                logging.info(f"{symbol} {interval} long position open.")
+
+            # 숏
+            elif pred == 1:
+
+                entryPrice = last_row["close"]
+                raw_quantity = balance * (ratio / 100) / entryPrice * leverage
+                quantity = format_quantity(raw_quantity, symbol)
+                stopPrice = cal_stop_price(entryPrice, "SELL", symbol)
+
+                await open_position(
+                    key,
+                    secret,
+                    symbol,
+                    "SELL",
+                    quantity,
+                    "BUY",
+                    stopPrice,
+                )
+
+                # 로그 기록
+                logging.info(f"{symbol} {interval} short position open.")
+
+        # 모델 업데이트
+        await training_and_save_model(symbol, df, model_dir, sl_ratio)
+
+
+symbols = config.symbols
+leverage = config.leverage
+interval = config.interval
+
+
+async def run_multiple_tasks():
+    # 여러 매개변수로 main 함수를 비동기적으로 실행
+    await asyncio.gather(
+        main(symbols[0], leverage, interval),
+        main(symbols[1], leverage, interval),
+    )
+
+
+if server_connect():
+    setup_logging()
+    asyncio.run(run_multiple_tasks())
+else:
+    print("server connect problem")

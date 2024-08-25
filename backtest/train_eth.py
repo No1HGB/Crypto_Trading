@@ -3,7 +3,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import accuracy_score
 import joblib
 
-from calculate import cal_values, make_data
+from preprocess import cal_values, make_data
 from fetch import fetch_data
 
 # 변수 설정
@@ -12,7 +12,7 @@ interval = "1h"
 data_num = 1200
 window = 12
 sl = 1.5
-model_dir = f"model/gb_classifier_eth.pkl"
+model_dir = f"models/gb_classifier_eth.pkl"
 
 # 실행
 df = fetch_data(symbol, interval, data_num)

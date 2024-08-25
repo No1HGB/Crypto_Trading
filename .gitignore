@@ -1,7 +1,12 @@
 ## My project
-backtest/model/*
-model/*
-.myenv
+backtest/models/*
+models/*
+logs/*
+!backtest/models/.gitkeep
+!logs/.gitkeep
+!models/.gitkeep
+.env
+docs.txt
 
 ### Python template
 # Byte-compiled / optimized / DLL files
