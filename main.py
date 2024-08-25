@@ -1,4 +1,4 @@
-import logging, asyncio, os
+import logging, asyncio
 import joblib
 
 import config
@@ -27,20 +27,19 @@ async def main(symbol, leverage, interval):
     secret = config.secret
     ratio = config.ratio
     start = 0
-    pred = 0
     sl_ratio = config.stop_ratio
     model_dir = f"models/gb_classifier_{symbol}.pkl"
 
     logging.info(f"{symbol} {interval} trading program start")
 
-    # 첫 시작 시 모델 훈련 및 저장
+    # 첫 시작 시 모델 훈련 및 저장 / 해당 심볼 레버리지 변경
     if start == 0:
         df = await fetch_data(symbol, interval, 1200)
         df = cal_values(df)
         await training_and_save_model(symbol, df, model_dir, sl_ratio)
-        # 해당 심볼 레버리지 변경(처음 시작 시)
         await change_leverage(key, secret, symbol, leverage)
         start += 1
+        logging.info(f"{symbol} {interval} start process success!")
 
     while True:
         # 정시까지 기다리기
@@ -53,12 +52,9 @@ async def main(symbol, leverage, interval):
         last_row = df.iloc[-1]
 
         # 예측 결과 가져오기
-        if os.path.exists(model_dir):
-            model = joblib.load(model_dir)
-            X_data = x_data(last_row)
-            pred = model.predict(X_data)
-        else:
-            logging.info(f"{model_dir} not exist")
+        model = joblib.load(model_dir)
+        X_data = x_data(last_row)
+        pred = model.predict(X_data)
 
         position = await get_position(key, secret, symbol)
         positionAmt = float(position["positionAmt"])
@@ -72,10 +68,9 @@ async def main(symbol, leverage, interval):
                 await asyncio.sleep(1.5)
 
         elif positionAmt < 0:
-            positionAmt = abs(positionAmt)
 
             if pred == 2:
-                await tp_sl(key, secret, symbol, "BUY", positionAmt)
+                await tp_sl(key, secret, symbol, "BUY", abs(positionAmt))
                 logging.info(f"{symbol} {interval} short position all close")
                 await asyncio.sleep(1.5)
 
