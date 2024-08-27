@@ -55,6 +55,7 @@ async def main(symbol, leverage, interval):
         model = joblib.load(model_dir)
         X_data = x_data(last_row)
         pred = model.predict(X_data)
+        logging.info(f"{symbol} {interval} Prediction: {pred}")
 
         position = await get_position(key, secret, symbol)
         positionAmt = float(position["positionAmt"])

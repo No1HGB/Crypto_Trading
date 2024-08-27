@@ -9,7 +9,7 @@ from fetch import fetch_data
 # 변수 설정
 symbol = "ETHUSDT"
 interval = "1h"
-data_num = 1200
+data_num = 2000
 window = 12
 sl = 1.5
 model_dir = f"models/gb_classifier_eth.pkl"
@@ -20,7 +20,7 @@ end_timestamp = df.iloc[-1]["close_time"]
 print(end_timestamp)
 df = cal_values(df)
 print(df.shape)
-using_df = df.iloc[:-120]
+using_df = df.iloc[:-720]
 X_data, y_data, real_x_data = make_data(df, 12, 1.5)
 
 X_train_split, X_val, y_train_split, y_val = train_test_split(
