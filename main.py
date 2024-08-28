@@ -27,6 +27,7 @@ async def main(symbol, leverage, interval):
     secret = config.secret
     ratio = config.ratio
     start = 0
+    position_cnt = 0
     sl_ratio = config.stop_ratio
     model_dir = f"models/gb_classifier_{symbol}.pkl"
 
@@ -55,25 +56,40 @@ async def main(symbol, leverage, interval):
         model = joblib.load(model_dir)
         X_data = x_data(last_row)
         pred = model.predict(X_data)
+        prob_lst = model.predict_proba(X_data)
+        prob = max(prob_lst[0])
         logging.info(f"{symbol} {interval} Prediction: {pred}")
+        logging.info(f"{symbol} {interval} Probability: {prob}")
 
         position = await get_position(key, secret, symbol)
         positionAmt = float(position["positionAmt"])
 
         # 해당 포지션이 있는 경우, 포지션 종료 로직
         if positionAmt > 0:
+            position_cnt += 1
 
-            if pred == 1:
+            if pred == 1 and (prob >= 0.99 or position_cnt == 6):
                 await tp_sl(key, secret, symbol, "SELL", positionAmt)
-                logging.info(f"{symbol} {interval} long position all close")
+                position_cnt = 0
+                logging.info(f"{symbol} {interval} long position close")
                 await asyncio.sleep(1.5)
+
+            elif pred == 2 and position_cnt == 6:
+                position_cnt = 0
+                logging.info(f"{symbol} {interval} long position cnt init")
 
         elif positionAmt < 0:
+            position_cnt += 1
 
-            if pred == 2:
+            if pred == 2 and (prob >= 0.99 or position_cnt == 6):
                 await tp_sl(key, secret, symbol, "BUY", abs(positionAmt))
-                logging.info(f"{symbol} {interval} short position all close")
+                position_cnt = 0
+                logging.info(f"{symbol} {interval} short position close")
                 await asyncio.sleep(1.5)
+
+            elif pred == 1 and position_cnt == 6:
+                position_cnt = 0
+                logging.info(f"{symbol} {interval} short position cnt init")
 
         # 포지션 다시 가져오기(종료된 경우 고려)
         position = await get_position(key, secret, symbol)

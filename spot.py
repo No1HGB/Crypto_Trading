@@ -35,9 +35,10 @@ accuracy_val = accuracy_score(y_val, y_pred_val)
 
 # 실제 예측
 real_y_pred = model.predict(real_x_data)
+real_y_prob_lst = model.predict_proba(real_x_data)
+prob = max(real_y_prob_lst[0])
 
 # 성능 평가
-print("Validation Data:", y_val)
-print("Prediction Data:", y_pred_val)
 print("Validation Accuracy:", accuracy_val)
 print("Real Predicted Data:", real_y_pred)
+print("Real Probability:", prob)
