@@ -13,7 +13,7 @@ async def training_and_save_model(
     symbol: str, df: pd.DataFrame, model_dir: str, sl_ratio: float
 ):
 
-    X_data, y_data, _ = make_data(df, 12, sl_ratio)
+    X_data, y_data, _ = make_data(df, 6, sl_ratio)
     X_train_split, X_val, y_train_split, y_val = train_test_split(
         X_data, y_data, test_size=0.2, random_state=42
     )

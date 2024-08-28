@@ -14,6 +14,7 @@ position = 0  # 포지션: 0 - 없음, 1 - 매도, 2 - 매수
 entry_price = 0
 take_profit_price = 0
 stop_loss_price = 0
+position_cnt = 0
 
 # 익절, 손절 조건 설정
 take_profit_ratio = 0.02
@@ -39,6 +40,7 @@ for i in range(len(df)):
 
     if position == 2:
         current_price = df.at[i, "close"]
+        position_cnt += 1
 
         if stop_loss_price >= df.at[i, "low"] and stop_loss_price <= df.at[i, "high"]:
             loss = margin * leverage * stop_loss_ratio
@@ -47,8 +49,9 @@ for i in range(len(df)):
             loss_count += 1
             margin = 0
             position = 0
+            position_cnt = 0
 
-        elif pred == 1:
+        elif pred == 1 and position_cnt == 6:
             profit_or_loss = (
                 margin * leverage * (current_price - entry_price) / entry_price
             )
@@ -57,14 +60,17 @@ for i in range(len(df)):
                 win_count += 1
                 margin = 0
                 position = 0
+                position_cnt = 0
             else:
                 capital += profit_or_loss
                 loss_count += 1
                 margin = 0
                 position = 0
+                position_cnt = 0
 
     elif position == 1:
         current_price = df.at[i, "close"]
+        position_cnt += 1
 
         if stop_loss_price >= df.at[i, "low"] and stop_loss_price <= df.at[i, "high"]:
             loss = margin * leverage * stop_loss_ratio
@@ -73,8 +79,9 @@ for i in range(len(df)):
             loss_count += 1
             margin = 0
             position = 0
+            position_cnt = 0
 
-        elif pred == 2:
+        elif pred == 2 and position_cnt == 6:
             profit_or_loss = (
                 margin * leverage * (entry_price - current_price) / entry_price
             )
@@ -83,14 +90,17 @@ for i in range(len(df)):
                 win_count += 1
                 margin = 0
                 position = 0
+                position_cnt = 0
             else:
                 capital += profit_or_loss
                 loss_count += 1
                 margin = 0
                 position = 0
+                position_cnt = 0
 
     if position == 0:  # 포지션이 없다면
         if pred == 2:
+            position_cnt = 0
             position = 2
             margin = capital / 5
             capital -= margin * leverage * (0.1 / 100)
@@ -100,6 +110,7 @@ for i in range(len(df)):
             stop_loss_price = entry_price * (1 - stop_loss_ratio)
 
         elif pred == 1:
+            position_cnt = 0
             position = 1
             margin = capital / 5
             capital -= margin * leverage * (0.1 / 100)

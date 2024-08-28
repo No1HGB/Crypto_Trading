@@ -103,20 +103,25 @@ def make_data(df: pd.DataFrame, window: int, sl: float, tp_min: float = 0.2):
         entry = df.iloc[i]["close"]
         close = df.iloc[i + window]["close"]
         window_delta = (close - entry) / entry * 100
-        low = df.iloc[i + 1 : i + window]["low"].min()
-        high = df.iloc[i + 1 : i + window]["high"].max()
+        # low = df.iloc[i + 1 : i + window]["low"].min()
+        # high = df.iloc[i + 1 : i + window]["high"].max()
+        #
+        # long_sl = entry * (1 - sl / 100)
+        # short_sl = entry * (1 + sl / 100)
+        #
+        # # long
+        # if tp_min <= abs(window_delta) and window_delta > 0 and long_sl < low:
+        #     y_data.append(2)
+        # # short
+        # elif tp_min <= abs(window_delta) and window_delta < 0 and short_sl > high:
+        #     y_data.append(1)
+        # else:
+        #     y_data.append(0)
 
-        long_sl = entry * (1 - sl / 100)
-        short_sl = entry * (1 + sl / 100)
-
-        # long
-        if tp_min <= abs(window_delta) and window_delta > 0 and long_sl < low:
+        if window_delta > 0:
             y_data.append(2)
-        # short
-        elif tp_min <= abs(window_delta) and window_delta < 0 and short_sl > high:
-            y_data.append(1)
         else:
-            y_data.append(0)
+            y_data.append(1)
 
         x = selected_df.iloc[i].values
         x_data.append(x)

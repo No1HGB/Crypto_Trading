@@ -21,7 +21,7 @@ print(end_timestamp)
 df = cal_values(df)
 print(df.shape)
 using_df = df.iloc[:-720]
-X_data, y_data, real_x_data = make_data(df, 12, 1.5)
+X_data, y_data, real_x_data = make_data(using_df, 6, 1.5)
 
 X_train_split, X_val, y_train_split, y_val = train_test_split(
     X_data, y_data, test_size=0.2, random_state=42
