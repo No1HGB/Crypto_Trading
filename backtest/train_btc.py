@@ -51,7 +51,7 @@ process_y_val = []
 process_y_pred_val = []
 for i, prob_box in enumerate(y_prob_val):
     prob = max(prob_box)
-    if prob >= 0.70:
+    if prob >= 0.99:
         process_y_val.append(y_val[i])
         process_y_pred_val.append(y_pred_val[i])
 

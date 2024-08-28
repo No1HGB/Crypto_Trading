@@ -74,7 +74,7 @@ def cal_values(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def make_data(df: pd.DataFrame, window: int, sl: float, tp_min: float = 0.2):
+def make_data(df: pd.DataFrame, window: int, sl: float, tp_min: float = 0.1):
     columns = [
         "open_time",
         "close_time",
@@ -118,10 +118,12 @@ def make_data(df: pd.DataFrame, window: int, sl: float, tp_min: float = 0.2):
         # else:
         #     y_data.append(0)
 
-        if window_delta > 0:
+        if window_delta > 0 and tp_min <= abs(window_delta):
             y_data.append(2)
-        else:
+        elif window_delta < 0 and tp_min <= abs(window_delta):
             y_data.append(1)
+        else:
+            y_data.append(0)
 
         x = selected_df.iloc[i].values
         x_data.append(x)

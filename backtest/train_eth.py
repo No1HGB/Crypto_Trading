@@ -2,6 +2,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import accuracy_score
 import joblib
+import numpy as np
 
 from preprocess import cal_values, make_data
 from fetch import fetch_data
@@ -42,16 +43,30 @@ model.fit(X_train_split, y_train_split)
 
 # validation 예측
 y_pred_val = model.predict(X_val)
+y_prob_val = model.predict_proba(X_val)
 accuracy_val = accuracy_score(y_val, y_pred_val)
+
+process_y_val = []
+process_y_pred_val = []
+for i, prob_box in enumerate(y_prob_val):
+    prob = max(prob_box)
+    if prob >= 0.99:
+        process_y_val.append(y_val[i])
+        process_y_pred_val.append(y_pred_val[i])
+
+process_accuracy = accuracy_score(np.array(process_y_val), np.array(process_y_pred_val))
 
 # 실제 예측
 real_y_pred = model.predict(real_x_data)
+real_prob = model.predict_proba(real_x_data)
 
 # 모델 저장
 joblib.dump(model, model_dir)
 
 # 성능 평가
-print("Validation Data:", y_val)
-print("Prediction Data:", y_pred_val)
+print(f"Real Probability: {max(real_prob[0])}")
 print("Validation Accuracy:", accuracy_val)
+print("Validation Processed Accuracy:", process_accuracy)
+print("Validation Num:", len(y_val))
+print("Validation Processed Num:", len(process_y_val))
 print("Real Predicted Data:", real_y_pred)

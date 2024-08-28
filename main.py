@@ -27,7 +27,6 @@ async def main(symbol, leverage, interval):
     secret = config.secret
     ratio = config.ratio
     start = 0
-    position_cnt = 0
     sl_ratio = config.stop_ratio
     model_dir = f"models/gb_classifier_{symbol}.pkl"
 
@@ -66,30 +65,16 @@ async def main(symbol, leverage, interval):
 
         # 해당 포지션이 있는 경우, 포지션 종료 로직
         if positionAmt > 0:
-            position_cnt += 1
-
-            if pred == 1 and (prob >= 0.99 or position_cnt == 6):
+            if (pred == 1 and prob >= 0.99) or pred == 0:
                 await tp_sl(key, secret, symbol, "SELL", positionAmt)
-                position_cnt = 0
                 logging.info(f"{symbol} {interval} long position close")
                 await asyncio.sleep(1.5)
 
-            elif pred == 2 and position_cnt == 6:
-                position_cnt = 0
-                logging.info(f"{symbol} {interval} long position cnt init")
-
         elif positionAmt < 0:
-            position_cnt += 1
-
-            if pred == 2 and (prob >= 0.99 or position_cnt == 6):
+            if (pred == 2 and prob >= 0.99) or pred == 0:
                 await tp_sl(key, secret, symbol, "BUY", abs(positionAmt))
-                position_cnt = 0
                 logging.info(f"{symbol} {interval} short position close")
                 await asyncio.sleep(1.5)
-
-            elif pred == 1 and position_cnt == 6:
-                position_cnt = 0
-                logging.info(f"{symbol} {interval} short position cnt init")
 
         # 포지션 다시 가져오기(종료된 경우 고려)
         position = await get_position(key, secret, symbol)
@@ -98,13 +83,11 @@ async def main(symbol, leverage, interval):
 
         # 해당 포지션이 없고 마진이 있는 경우 포지션 진입
         if positionAmt == 0 and (balance * (ratio / 100) < available):
-
             await cancel_orders(key, secret, symbol)
             logging.info(f"{symbol} open orders cancel")
 
             # 롱
-            if pred == 2:
-
+            if pred == 2 and prob >= 0.99:
                 entryPrice = last_row["close"]
                 raw_quantity = balance * (ratio / 100) / entryPrice * leverage
                 quantity = format_quantity(raw_quantity, symbol)
@@ -124,8 +107,7 @@ async def main(symbol, leverage, interval):
                 logging.info(f"{symbol} {interval} long position open.")
 
             # 숏
-            elif pred == 1:
-
+            elif pred == 1 and prob >= 0.99:
                 entryPrice = last_row["close"]
                 raw_quantity = balance * (ratio / 100) / entryPrice * leverage
                 quantity = format_quantity(raw_quantity, symbol)
