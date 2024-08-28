@@ -26,6 +26,7 @@ async def main(symbol, leverage, interval):
     key = config.key
     secret = config.secret
     ratio = config.ratio
+    data_num = 560
     start = 0
     position_cnt = 0
     sl_ratio = config.stop_ratio
@@ -35,7 +36,7 @@ async def main(symbol, leverage, interval):
 
     # 첫 시작 시 모델 훈련 및 저장 / 해당 심볼 레버리지 변경
     if start == 0:
-        df = await fetch_data_async(symbol, interval, 1080)
+        df = await fetch_data_async(symbol, interval, data_num)
         df = cal_values(df)
         await training_and_save_model(symbol, df, model_dir, sl_ratio)
         await change_leverage(key, secret, symbol, leverage)
@@ -48,7 +49,7 @@ async def main(symbol, leverage, interval):
         logging.info(f"{symbol} {interval} next interval")
 
         # 데이터 로드
-        df = await fetch_data_async(symbol, interval, 1080)
+        df = await fetch_data_async(symbol, interval, data_num)
         df = cal_values(df)
         last_row = df.iloc[-1]
 

@@ -10,7 +10,7 @@ from fetch import fetch_data
 # 변수 설정
 symbol = "ETHUSDT"
 interval = "1h"
-data_num = 2000
+data_num = 560
 window = 12
 sl = 1.5
 model_dir = f"models/gb_classifier_eth.pkl"
@@ -21,7 +21,7 @@ end_timestamp = df.iloc[-1]["close_time"]
 print(end_timestamp)
 df = cal_values(df)
 print(df.shape)
-using_df = df.iloc[:-720]
+using_df = df.iloc[:]
 X_data, y_data, real_x_data = make_data(using_df, 6, 1.5)
 
 X_train_split, X_val, y_train_split, y_val = train_test_split(
@@ -45,6 +45,18 @@ model.fit(X_train_split, y_train_split)
 y_pred_val = model.predict(X_val)
 y_prob_val = model.predict_proba(X_val)
 accuracy_val = accuracy_score(y_val, y_pred_val)
+
+zero_train = []
+for i in range(len(y_train_split)):
+    if y_train_split[i] == 0:
+        zero_train.append(i)
+zero_val = []
+for i in range(len(y_val)):
+    if y_val[i] == 0:
+        zero_val.append(i)
+
+print("Zero Train: ", len(zero_train) / len(y_train_split))
+print("Zero Val: ", len(zero_val) / len(y_val))
 
 process_y_val = []
 process_y_pred_val = []
