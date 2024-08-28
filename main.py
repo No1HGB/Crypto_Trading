@@ -26,7 +26,7 @@ async def main(symbol, leverage, interval):
     key = config.key
     secret = config.secret
     ratio = config.ratio
-    data_num = 560
+    data_num = 561
     start = 0
     position_cnt = 0
     sl_ratio = config.stop_ratio
@@ -38,6 +38,7 @@ async def main(symbol, leverage, interval):
     if start == 0:
         df = await fetch_data_async(symbol, interval, data_num)
         df = cal_values(df)
+        print(len(df))
         await training_and_save_model(symbol, df, model_dir, sl_ratio)
         await change_leverage(key, secret, symbol, leverage)
         start += 1
