@@ -27,6 +27,7 @@ async def main(symbol, leverage, interval):
     secret = config.secret
     ratio = config.ratio
     start = 0
+    position_cnt = 0
     sl_ratio = config.stop_ratio
     model_dir = f"models/gb_classifier_{symbol}.pkl"
 
@@ -65,14 +66,26 @@ async def main(symbol, leverage, interval):
 
         # 해당 포지션이 있는 경우, 포지션 종료 로직
         if positionAmt > 0:
-            if (pred == 1 and prob >= 0.99) or pred == 0:
+            position_cnt += 1
+
+            if pred == 2 and prob >= 0.99:
+                position_cnt = 0
+
+            if (pred == 1 and prob >= 0.99) or pred == 0 or position_cnt >= 6:
                 await tp_sl(key, secret, symbol, "SELL", positionAmt)
+                position_cnt = 0
                 logging.info(f"{symbol} {interval} long position close")
                 await asyncio.sleep(1.5)
 
         elif positionAmt < 0:
-            if (pred == 2 and prob >= 0.99) or pred == 0:
+            position_cnt += 1
+
+            if pred == 1 and prob >= 0.99:
+                position_cnt = 0
+
+            if (pred == 2 and prob >= 0.99) or pred == 0 or position_cnt >= 6:
                 await tp_sl(key, secret, symbol, "BUY", abs(positionAmt))
+                position_cnt = 0
                 logging.info(f"{symbol} {interval} short position close")
                 await asyncio.sleep(1.5)
 
