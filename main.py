@@ -38,7 +38,8 @@ async def main(symbol, leverage, interval):
     if start == 0:
         df = await fetch_data_async(symbol, interval, data_num)
         df = cal_values(df)
-        print(len(df))
+        end_timestamp = df.iloc[-1]["close_time"]
+        logging.info(f"{symbol} {interval} df info: {end_timestamp} / {df.shape}")
         await training_and_save_model(symbol, df, model_dir, sl_ratio)
         await change_leverage(key, secret, symbol, leverage)
         start += 1
@@ -52,6 +53,8 @@ async def main(symbol, leverage, interval):
         # 데이터 로드
         df = await fetch_data_async(symbol, interval, data_num)
         df = cal_values(df)
+        end_timestamp = df.iloc[-1]["close_time"]
+        logging.info(f"{symbol} {interval} df info: {end_timestamp} / {df.shape}")
         last_row = df.iloc[-1]
 
         # 예측 결과 가져오기
