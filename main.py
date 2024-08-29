@@ -76,7 +76,7 @@ async def main(symbol, leverage, interval):
             if pred == 2 and prob >= 0.99:
                 position_cnt = 0
 
-            if (pred == 1 and prob >= 0.99) or pred == 0 or position_cnt >= 6:
+            if pred != 2 or position_cnt >= 6:
                 await tp_sl(key, secret, symbol, "SELL", positionAmt)
                 position_cnt = 0
                 logging.info(f"{symbol} {interval} long position close")
@@ -88,7 +88,7 @@ async def main(symbol, leverage, interval):
             if pred == 1 and prob >= 0.99:
                 position_cnt = 0
 
-            if (pred == 2 and prob >= 0.99) or pred == 0 or position_cnt >= 6:
+            if pred != 1 or position_cnt >= 6:
                 await tp_sl(key, secret, symbol, "BUY", abs(positionAmt))
                 position_cnt = 0
                 logging.info(f"{symbol} {interval} short position close")
