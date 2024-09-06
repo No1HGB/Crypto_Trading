@@ -60,7 +60,9 @@ async def change_leverage(key, secret, symbol, leverage):
         logging.error(f"Unexpected error occurred(change_leverage){symbol}: {error}")
 
 
-async def open_position(key, secret, symbol, side, quantity, stopSide, stopPrice):
+async def open_position(
+    key, secret, symbol, side, quantity, stopSide, stopPrice, profitPrice
+):
     loop = asyncio.get_running_loop()
 
     um_futures_client = UMFutures(key=key, secret=secret)
@@ -81,10 +83,21 @@ async def open_position(key, secret, symbol, side, quantity, stopSide, stopPrice
         stopPrice=stopPrice,
         reduceOnly="true",
     )
+    func_tp = partial(
+        um_futures_client.new_order,
+        symbol=symbol,
+        side=stopSide,
+        type="TAKE_PROFIT",
+        quantity=quantity,
+        price=profitPrice,
+        stopPrice=profitPrice,
+        reduceOnly="true",
+    )
 
     try:
         await loop.run_in_executor(None, func_open)
         await loop.run_in_executor(None, func_sl)
+        await loop.run_in_executor(None, func_tp)
 
     except ClientError as error:
         logging.error(

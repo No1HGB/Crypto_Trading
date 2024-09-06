@@ -1,19 +1,16 @@
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import accuracy_score
-import joblib
 import numpy as np
+import joblib
 
 from preprocess import cal_values, make_data
 from fetch import fetch_data
 
 # 변수 설정
 symbol = "BTCUSDT"
-interval = "1h"
-data_num = 560
-window = 12
-sl = 1.5
-model_dir = f"models/gb_classifier_btc.pkl"
+interval = "15m"
+data_num = 7000
+model_dir = f"models/gb_classifier_{symbol}.pkl"
 
 # 실행
 df = fetch_data(symbol, interval, data_num)
@@ -21,11 +18,12 @@ end_timestamp = df.iloc[-1]["close_time"]
 print(end_timestamp)
 df = cal_values(df)
 print(df.shape)
-X_data, y_data, real_x_data = make_data(df, 6, 1.5)
+X_data, y_data = make_data(df, symbol)
+print(len(X_data), len(y_data))
 
-X_train_split, X_val, y_train_split, y_val = train_test_split(
-    X_data, y_data, test_size=0.2, random_state=42
-)
+split = int(len(X_data) / 2)
+X_train, X_test = X_data[:split], X_data[split:]
+y_train, y_test = y_data[:split], y_data[split:]
 
 # 모델 생성
 model = GradientBoostingClassifier(
@@ -38,46 +36,29 @@ model = GradientBoostingClassifier(
 )
 
 # 모델 학습
-model.fit(X_train_split, y_train_split)
-
-# validation 예측
-y_pred_val = model.predict(X_val)
-y_prob_val = model.predict_proba(X_val)
-accuracy_val = accuracy_score(y_val, y_pred_val)
-
-zero_train = []
-for i in range(len(y_train_split)):
-    if y_train_split[i] == 0:
-        zero_train.append(i)
-zero_val = []
-for i in range(len(y_val)):
-    if y_val[i] == 0:
-        zero_val.append(i)
-
-print("Zero Train: ", len(zero_train) / len(y_train_split))
-print("Zero Val: ", len(zero_val) / len(y_val))
-
-process_y_val = []
-process_y_pred_val = []
-for i, prob_box in enumerate(y_prob_val):
-    prob = max(prob_box)
-    if prob >= 0.99:
-        process_y_val.append(y_val[i])
-        process_y_pred_val.append(y_pred_val[i])
-
-process_accuracy = accuracy_score(np.array(process_y_val), np.array(process_y_pred_val))
-
-# 실제 예측
-real_y_pred = model.predict(real_x_data)
-real_prob = model.predict_proba(real_x_data)
+model.fit(X_train, y_train)
 
 # 모델 저장
 joblib.dump(model, model_dir)
 
-# 성능 평가
-print(f"Real Probability: {max(real_prob[0])}")
-print("Validation Accuracy:", accuracy_val)
-print("Validation Processed Accuracy:", process_accuracy)
-print("Validation Num:", len(y_val))
-print("Validation Processed Num:", len(process_y_val))
-print("Real Predicted Data:", real_y_pred)
+# validation 예측
+y_pred_test = model.predict(X_test)
+y_prob_test = model.predict_proba(X_test)
+accuracy_test = accuracy_score(y_test, y_pred_test)
+print(accuracy_test)
+
+process_y_test = []
+process_y_pred_test = []
+for i, prob_box in enumerate(y_prob_test):
+    prob = max(prob_box)
+    if prob >= 0.7:
+        process_y_test.append(y_test[i])
+        process_y_pred_test.append(y_pred_test[i])
+
+process_accuracy = accuracy_score(
+    np.array(process_y_test), np.array(process_y_pred_test)
+)
+print(process_accuracy, len(process_y_test))
+
+cal_result = (len(process_y_test) / 2) * (2 * process_accuracy - 1) * (1 - 0.1)
+print(cal_result)

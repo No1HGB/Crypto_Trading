@@ -50,13 +50,26 @@ def setup_logging():
 async def wait_until_next_interval(interval):
     now = datetime.datetime.now(datetime.UTC)
     next_time = now.replace(minute=0, second=0, microsecond=0)
-    if interval == "1h":
+    if interval == "5m":
+        remainder = now.minute % 5
+        next_time = (
+            now.replace(minute=(now.minute - remainder))
+            + datetime.timedelta(minutes=5)
+            + datetime.timedelta(milliseconds=100)
+        )
+    elif interval == "15m":
+        remainder = now.minute % 15
+        next_time = (
+            now.replace(minute=(now.minute - remainder))
+            + datetime.timedelta(minutes=15)
+            + datetime.timedelta(milliseconds=100)
+        )
+    elif interval == "1h":
         next_time = (
             now.replace(minute=0, second=0, microsecond=0)
             + datetime.timedelta(hours=1)
             + datetime.timedelta(milliseconds=100)
         )
-
     elif interval == "4h":
         hours_until_next = 4 - now.hour % 4
         hours_until_next = 4 if hours_until_next == 0 else hours_until_next
