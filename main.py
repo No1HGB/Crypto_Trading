@@ -45,13 +45,6 @@ async def main(symbol, leverage, interval):
         df = cal_values(df)
         last_row = df.iloc[-1]
 
-        # 예측 결과 가져오기
-        model = joblib.load(model_dir)
-        X_data = x_data(df, symbol, False)
-        pred = model.predict(X_data)
-        prob_lst = model.predict_proba(X_data)
-        prob = max(prob_lst[0])
-
         # 확률 기준
         if symbol == "BTCUSDT":
             prob_line = 0.7
@@ -70,57 +63,69 @@ async def main(symbol, leverage, interval):
             await cancel_orders(key, secret, symbol)
             logging.info(f"{symbol} open orders cancel")
 
-            # 메인 롱
-            if pred == 1 and prob >= prob_line:
-                entryPrice = last_row["close"]
-                raw_quantity = balance * (ratio / 100) / entryPrice * leverage
-                quantity = format_quantity(raw_quantity, symbol)
-                stopPrice = cal_stop_price(entryPrice, "BUY", symbol, False)
-                profitPrice = cal_profit_price(entryPrice, "BUY", symbol, False)
+            if last_row["volume_delta"] >= 1:
 
-                await open_position(
-                    key,
-                    secret,
-                    symbol,
-                    "BUY",
-                    quantity,
-                    "SELL",
-                    stopPrice,
-                    profitPrice,
-                )
+                # 메인 예측 결과 가져오기
+                model = joblib.load(model_dir)
+                X_data = x_data(df, symbol, False)
+                pred = model.predict(X_data)
+                prob_lst = model.predict_proba(X_data)
+                prob = max(prob_lst[0])
 
-                # 로그 기록
-                logging.info(f"{symbol} {interval} long position open.")
+                # 메인 롱
+                if pred == 1 and prob >= prob_line:
+                    entryPrice = last_row["close"]
+                    raw_quantity = balance * (ratio / 100) / entryPrice * leverage
+                    quantity = format_quantity(raw_quantity, symbol)
+                    stopPrice = cal_stop_price(entryPrice, "BUY", symbol, False)
+                    profitPrice = cal_profit_price(entryPrice, "BUY", symbol, False)
 
-            # 메인 숏
-            elif pred == 0 and prob >= prob_line:
-                entryPrice = last_row["close"]
-                raw_quantity = balance * (ratio / 100) / entryPrice * leverage
-                quantity = format_quantity(raw_quantity, symbol)
-                stopPrice = cal_stop_price(entryPrice, "SELL", symbol, False)
-                profitPrice = cal_profit_price(entryPrice, "SELL", symbol, False)
+                    await open_position(
+                        key,
+                        secret,
+                        symbol,
+                        "BUY",
+                        quantity,
+                        "SELL",
+                        stopPrice,
+                        profitPrice,
+                    )
 
-                await open_position(
-                    key,
-                    secret,
-                    symbol,
-                    "SELL",
-                    quantity,
-                    "BUY",
-                    stopPrice,
-                    profitPrice,
-                )
+                    # 로그 기록
+                    logging.info(f"{symbol} {interval} long position open.")
 
-                # 로그 기록
-                logging.info(f"{symbol} {interval} short position open.")
+                # 메인 숏
+                elif pred == 0 and prob >= prob_line:
+                    entryPrice = last_row["close"]
+                    raw_quantity = balance * (ratio / 100) / entryPrice * leverage
+                    quantity = format_quantity(raw_quantity, symbol)
+                    stopPrice = cal_stop_price(entryPrice, "SELL", symbol, False)
+                    profitPrice = cal_profit_price(entryPrice, "SELL", symbol, False)
+
+                    await open_position(
+                        key,
+                        secret,
+                        symbol,
+                        "SELL",
+                        quantity,
+                        "BUY",
+                        stopPrice,
+                        profitPrice,
+                    )
+
+                    # 로그 기록
+                    logging.info(f"{symbol} {interval} short position open.")
 
             # BTCUSDT 일 대 작은 거래량 트레이드 적용
-            elif symbol == "BTCUSDT":
+            elif symbol == "BTCUSDT" and last_row["volume_delta"] < 1:
+
+                # 작은 예측
                 model_small = joblib.load(model_small_dir)
                 X_data_small = x_data(df, symbol, True)
                 pred_small = model_small.predict(X_data_small)
                 prob_small_lst = model_small.predict_proba(X_data_small)
                 prob_small = max(prob_small_lst[0])
+
                 # 작은 롱
                 if pred_small == 1 and prob_small >= prob_line_small:
                     entryPrice = last_row["close"]
