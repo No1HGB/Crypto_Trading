@@ -36,17 +36,17 @@ def make_data(df, symbol, n=1):
     days = 1
     ratio = 0.1
     if symbol == "BTCUSDT":
-        days = 12
+        days = 13
         ratio = 1
     elif symbol == "ETHUSDT":
-        days = 24
+        days = 25
         ratio = 1
 
     for i in range(days, len(df) - n):
         use_cols = ["delta", "up_delta", "down_delta", "d20", "dup", "dlow"]
         if df.loc[i, "volume_delta"] >= 1:
 
-            X_vector = df.loc[i - days : i, use_cols].values.flatten()
+            X_vector = df.iloc[i - days : i][use_cols].values.flatten()
             X_data.append(X_vector)
 
             # y_data 구성
@@ -85,17 +85,17 @@ def make_data_small(df, symbol, n=1):
     days = 1
     ratio = 0.1
     if symbol == "BTCUSDT":
-        days = 12
+        days = 13
         ratio = 0.5
     elif symbol == "ETHUSDT":
-        days = 24
+        days = 25
         ratio = 0.5
 
     for i in range(days, len(df) - n):
         use_cols = ["delta", "up_delta", "down_delta", "d20", "dup", "dlow"]
         if df.loc[i, "volume_delta"] < 1:
 
-            X_vector = df.loc[i - days : i, use_cols].values.flatten()
+            X_vector = df.iloc[i - days : i][use_cols].values.flatten()
             X_data.append(X_vector)
 
             # y_data 구성
@@ -131,17 +131,17 @@ def make_data_small(df, symbol, n=1):
 def x_data(df: pd.DataFrame, symbol: str, is_small: bool):
     days = 1
     if symbol == "BTCUSDT" and not is_small:
-        days = 12
+        days = 13
     elif symbol == "BTCUSDT" and is_small:
-        days = 12
+        days = 13
     elif symbol == "ETHUSDT" and not is_small:
-        days = 24
+        days = 25
     elif symbol == "ETHUSDT" and is_small:
-        days = 24
+        days = 25
 
     X_data = []
     use_cols = ["delta", "up_delta", "down_delta", "d20", "dup", "dlow"]
-    X_vector = df.loc[-days:, use_cols].values.flatten()
+    X_vector = df.iloc[-days:][use_cols].values.flatten()
     X_data.append(X_vector)
     X_data = np.array(X_data)
 
