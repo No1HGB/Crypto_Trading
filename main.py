@@ -76,7 +76,7 @@ async def main(symbol, leverage, interval):
                 raw_quantity = balance * (ratio / 100) / entryPrice * leverage
                 quantity = format_quantity(raw_quantity, symbol)
                 stopPrice = cal_stop_price(entryPrice, "BUY", symbol, False)
-                profitPrice = cal_profit_price(stopPrice, "BUY", symbol, False)
+                profitPrice = cal_profit_price(entryPrice, "BUY", symbol, False)
 
                 await open_position(
                     key,
@@ -98,7 +98,7 @@ async def main(symbol, leverage, interval):
                 raw_quantity = balance * (ratio / 100) / entryPrice * leverage
                 quantity = format_quantity(raw_quantity, symbol)
                 stopPrice = cal_stop_price(entryPrice, "SELL", symbol, False)
-                profitPrice = cal_profit_price(stopPrice, "SELL", symbol, False)
+                profitPrice = cal_profit_price(entryPrice, "SELL", symbol, False)
 
                 await open_position(
                     key,
@@ -115,7 +115,7 @@ async def main(symbol, leverage, interval):
                 logging.info(f"{symbol} {interval} short position open.")
 
             # BTCUSDT 일 대 작은 거래량 트레이드 적용
-            if symbol == "BTCUSDT":
+            elif symbol == "BTCUSDT":
                 model_small = joblib.load(model_small_dir)
                 X_data_small = x_data(df, symbol, True)
                 pred_small = model_small.predict(X_data_small)
@@ -127,7 +127,7 @@ async def main(symbol, leverage, interval):
                     raw_quantity = balance * (ratio / 100) / entryPrice * leverage
                     quantity = format_quantity(raw_quantity, symbol)
                     stopPrice = cal_stop_price(entryPrice, "BUY", symbol, True)
-                    profitPrice = cal_profit_price(stopPrice, "BUY", symbol, True)
+                    profitPrice = cal_profit_price(entryPrice, "BUY", symbol, True)
                     await open_position(
                         key,
                         secret,
@@ -147,7 +147,7 @@ async def main(symbol, leverage, interval):
                     raw_quantity = balance * (ratio / 100) / entryPrice * leverage
                     quantity = format_quantity(raw_quantity, symbol)
                     stopPrice = cal_stop_price(entryPrice, "SELL", symbol, True)
-                    profitPrice = cal_profit_price(stopPrice, "SELL", symbol, True)
+                    profitPrice = cal_profit_price(entryPrice, "SELL", symbol, True)
 
                     await open_position(
                         key,
