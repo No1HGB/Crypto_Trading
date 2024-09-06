@@ -53,14 +53,14 @@ async def wait_until_next_interval(interval):
     if interval == "5m":
         remainder = now.minute % 5
         next_time = (
-            now.replace(minute=(now.minute - remainder))
+            now.replace(minute=(now.minute - remainder), second=0, microsecond=0)
             + datetime.timedelta(minutes=5)
             + datetime.timedelta(milliseconds=100)
         )
     elif interval == "15m":
         remainder = now.minute % 15
         next_time = (
-            now.replace(minute=(now.minute - remainder))
+            now.replace(minute=(now.minute - remainder), second=0, microsecond=0)
             + datetime.timedelta(minutes=15)
             + datetime.timedelta(milliseconds=100)
         )
