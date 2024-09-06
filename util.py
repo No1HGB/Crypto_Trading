@@ -55,20 +55,20 @@ async def wait_until_next_interval(interval):
         next_time = (
             now.replace(minute=(now.minute - remainder), second=0, microsecond=0)
             + datetime.timedelta(minutes=5)
-            + datetime.timedelta(milliseconds=100)
+            + datetime.timedelta(milliseconds=300)
         )
     elif interval == "15m":
         remainder = now.minute % 15
         next_time = (
             now.replace(minute=(now.minute - remainder), second=0, microsecond=0)
             + datetime.timedelta(minutes=15)
-            + datetime.timedelta(milliseconds=100)
+            + datetime.timedelta(milliseconds=300)
         )
     elif interval == "1h":
         next_time = (
             now.replace(minute=0, second=0, microsecond=0)
             + datetime.timedelta(hours=1)
-            + datetime.timedelta(milliseconds=100)
+            + datetime.timedelta(milliseconds=300)
         )
     elif interval == "4h":
         hours_until_next = 4 - now.hour % 4
@@ -76,13 +76,13 @@ async def wait_until_next_interval(interval):
         next_time = (
             now.replace(minute=0, second=0, microsecond=0)
             + datetime.timedelta(hours=hours_until_next)
-            + datetime.timedelta(milliseconds=100)
+            + datetime.timedelta(milliseconds=300)
         )
     elif interval == "1d":
         next_time = (
             now.replace(hour=0, minute=0, second=0, microsecond=0)
             + datetime.timedelta(days=1)
-            + datetime.timedelta(milliseconds=100)
+            + datetime.timedelta(milliseconds=300)
         )
 
     wait_seconds = (next_time - now).total_seconds()
