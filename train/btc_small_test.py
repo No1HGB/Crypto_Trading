@@ -45,7 +45,7 @@ process_y_test = []
 process_y_pred_test = []
 for i, prob_box in enumerate(y_prob_test):
     prob = max(prob_box)
-    if prob >= 0.5:
+    if prob >= 0.7:
         process_y_test.append(y_test[i])
         process_y_pred_test.append(y_pred_test[i])
 
