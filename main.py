@@ -32,7 +32,7 @@ async def main(symbol, leverage, interval):
     # 확률 기준
     if symbol == "BTCUSDT":
         prob_line = 0.9
-        prob_line_small = 0.7
+        prob_line_small = 0.5
     else:
         prob_line = 0.7
         prob_line_small = 0.5
