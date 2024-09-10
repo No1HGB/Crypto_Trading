@@ -223,3 +223,104 @@ def x_data_backtest(df: pd.DataFrame, symbol: str, i):
     X_data = np.array(X_data)
 
     return X_data
+
+
+def make_data_two(df, symbol, n=6):
+    X_data = []
+    y_data = []
+
+    if symbol == "BTCUSDT":
+        days = 24
+    else:
+        days = 24
+
+    for i in range(days, len(df) - n):
+        use_cols = [
+            "delta",
+            "up_delta",
+            "down_delta",
+            "d4",
+            "dup4",
+            "dlow4",
+            "d20",
+            "dup",
+            "dlow",
+            "volume_delta",
+        ]
+        if df.iloc[i]["volume_delta"] >= 1:
+            X_vector = df.iloc[i - days : i][use_cols].values.flatten()
+            X_data.append(X_vector)
+
+            if df.iloc[i]["close"] < df.iloc[i + 6]["close"]:
+                y_data.append(1)
+            else:
+                y_data.append(0)
+
+    X_data = np.array(X_data)
+    y_data = np.array(y_data)
+
+    return X_data, y_data
+
+
+def make_data_two_small(df, symbol, n=6):
+    X_data = []
+    y_data = []
+
+    if symbol == "BTCUSDT":
+        days = 24
+    else:
+        days = 32
+
+    for i in range(days, len(df) - n):
+        use_cols = [
+            "delta",
+            "up_delta",
+            "down_delta",
+            "d4",
+            "dup4",
+            "dlow4",
+            "d20",
+            "dup",
+            "dlow",
+            "volume_delta",
+        ]
+        if df.iloc[i]["volume_delta"] < 1:
+            X_vector = df.iloc[i - days : i][use_cols].values.flatten()
+            X_data.append(X_vector)
+
+            if df.iloc[i]["close"] < df.iloc[i + 6]["close"]:
+                y_data.append(1)
+            else:
+                y_data.append(0)
+
+    X_data = np.array(X_data)
+    y_data = np.array(y_data)
+
+    return X_data, y_data
+
+
+def x_data_backtest_two(df: pd.DataFrame, symbol: str, i):
+    if symbol == "BTCUSDT":
+        days = 24
+    else:
+        days = 24
+
+    X_data = []
+    use_cols = [
+        "delta",
+        "up_delta",
+        "down_delta",
+        "d4",
+        "dup4",
+        "dlow4",
+        "d20",
+        "dup",
+        "dlow",
+        "volume_delta",
+    ]
+
+    X_vector = df.iloc[i - days : i][use_cols].values.flatten()
+    X_data.append(X_vector)
+    X_data = np.array(X_data)
+
+    return X_data

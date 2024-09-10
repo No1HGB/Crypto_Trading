@@ -23,12 +23,12 @@ print("Shape")
 print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
 # 모델 생성
-model = XGBClassifier(
+model = GradientBoostingClassifier(
     max_depth=5,  # 트리 깊이 1-5
     n_estimators=1200,  # 시행 횟수 100-1200
     learning_rate=0.05,  # 학습률 0.01-0.1
-    # min_samples_split=2,  # 노드 분할 최소 샘플 수 2-10
-    # min_samples_leaf=1,  # 리프 노드 최소 샘플 수 1-5
+    min_samples_split=2,  # 노드 분할 최소 샘플 수 2-10
+    min_samples_leaf=1,  # 리프 노드 최소 샘플 수 1-5
     random_state=42,
 )
 
