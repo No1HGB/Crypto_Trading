@@ -1,4 +1,5 @@
 from sklearn.ensemble import GradientBoostingClassifier
+from xgboost import XGBClassifier
 import joblib
 
 from preprocess import cal_values, make_data
@@ -6,8 +7,8 @@ from fetch import fetch_data
 
 # 변수 설정
 symbol = "BTCUSDT"
-interval = "15m"
-data_num = 7000
+interval = "1h"
+data_num = 12000
 model_dir = f"models/gb_classifier_{symbol}.pkl"
 
 # 실행
@@ -15,7 +16,6 @@ df = fetch_data(symbol, interval, data_num)
 end_timestamp = df.iloc[-1]["close_time"]
 df = cal_values(df)
 X_data, y_data = make_data(df, symbol)
-
 
 split = int(len(X_data) / 2)
 X_train, X_test = X_data[:split], X_data[split:]
@@ -32,7 +32,7 @@ model = GradientBoostingClassifier(
 )
 
 # 모델 학습
-model.fit(X_test, y_test)
+model.fit(X_train, y_train)
 
 # 모델 저장
 joblib.dump(model, model_dir)

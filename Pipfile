@@ -12,6 +12,8 @@ pytz = "*"
 python-dotenv = "*"
 requests = "*"
 binance-connector = "*"
+statsmodels = "*"
+matplotlib = "*"
 
 [dev-packages]
 
