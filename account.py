@@ -114,7 +114,7 @@ async def open_position(
         logging.error(f"Unexpected error occurred(open_position){symbol}: {error}")
 
 
-async def close_position(key, secret, symbol, stopSide, quantity, price):
+async def close_position(key, secret, symbol, stopSide, quantity):
 
     loop = asyncio.get_running_loop()
     um_futures_client = UMFutures(key=key, secret=secret)
@@ -122,10 +122,8 @@ async def close_position(key, secret, symbol, stopSide, quantity, price):
         um_futures_client.new_order,
         symbol=symbol,
         side=stopSide,
-        type="LIMIT",
-        price=price,
+        type="MARKET",
         quantity=quantity,
-        timeInForce="GTC",
         reduceOnly="true",
     )
     try:

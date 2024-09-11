@@ -64,10 +64,10 @@ async def main(symbol, leverage, interval):
                 await cancel_orders(key, secret, symbol)
                 logging.info(f"{symbol} open orders cancel for close")
                 quantity = abs(positionAmt)
-                price = last_row["close"]
 
-                await close_position(key, secret, symbol, "SELL", quantity, price)
+                await close_position(key, secret, symbol, "SELL", quantity)
                 position_cnt = 0
+                await asyncio.sleep(1.5)
                 # 로그 기록
                 logging.info(f"{symbol} {interval} long position close")
 
@@ -79,15 +79,20 @@ async def main(symbol, leverage, interval):
                 await cancel_orders(key, secret, symbol)
                 logging.info(f"{symbol} open orders cancel for close")
                 quantity = abs(positionAmt)
-                price = last_row["close"]
 
-                await close_position(key, secret, symbol, "BUY", quantity, price)
+                await close_position(key, secret, symbol, "BUY", quantity)
                 position_cnt = 0
+                await asyncio.sleep(1.5)
                 # 로그 기록
                 logging.info(f"{symbol} {interval} short position close")
 
+        # 포지션 다시 가져오기(종료된 경우 고려)
+        position = await get_position(key, secret, symbol)
+        positionAmt = float(position["positionAmt"])
+        [balance, available] = await get_balance(key, secret)
+
         # 해당 포지션이 없고 마진이 있는 경우 포지션 진입
-        elif positionAmt == 0 and (balance * (ratio / 100) < available):
+        if positionAmt == 0 and (balance * (ratio / 100) < available):
             await cancel_orders(key, secret, symbol)
             logging.info(f"{symbol} open orders cancel")
             position_cnt = 0
@@ -148,7 +153,7 @@ async def run_multiple_tasks():
     # 여러 매개변수로 main 함수를 비동기적으로 실행
     await asyncio.gather(
         main(symbols[0], leverage, interval),
-        main(symbols[1], leverage, interval),
+        # main(symbols[1], leverage, interval),
     )
 
 

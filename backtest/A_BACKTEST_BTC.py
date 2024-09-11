@@ -134,7 +134,7 @@ for i in range(24, len(df)):
         if pred == 1:
             position = 1
             margin = capital / 5
-            capital -= margin * leverage * (0.04 / 100)
+            capital -= margin * leverage * (0.07 / 100)
             entry_price = df.at[i, "close"]
             position_cnt = 1
 
@@ -146,7 +146,7 @@ for i in range(24, len(df)):
         elif pred == 0:
             position = 0
             margin = capital / 5
-            capital -= margin * leverage * (0.04 / 100)
+            capital -= margin * leverage * (0.07 / 100)
             entry_price = df.at[i, "close"]
             position_cnt = 1
 
