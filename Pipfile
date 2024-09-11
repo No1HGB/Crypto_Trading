@@ -15,6 +15,7 @@ binance-connector = "*"
 statsmodels = "*"
 matplotlib = "*"
 seaborn = "*"
+xgboost = "*"
 
 [dev-packages]
 
