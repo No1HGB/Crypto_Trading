@@ -8,9 +8,11 @@ secret = os.getenv("SECRET")
 
 symbols = ["BTCUSDT", "ETHUSDT"]
 leverage = 5
-interval = "15m"  # 1h,4h,1d
+interval = "1h"  # 1h,4h,1d
 ratio = 20  # margin ratio per balance (%)
-tp = 1  # take profit ratio for price (%)
-sl = 1  # stop loss ratio for price (%)
-tp_s = 0.5
-sl_s = 0.5
+
+tp_btc = 1.5  # take profit ratio for price (%)
+sl_btc = 1.5  # stop loss ratio for price (%)
+
+tp_eth = 1.35  # take profit ratio for price (%)
+sl_eth = 0.6  # stop loss ratio for price (%)

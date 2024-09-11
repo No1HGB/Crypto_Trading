@@ -69,3 +69,29 @@ def ha_short(df: pd.DataFrame, i) -> bool:
     if df.at[i, "volume_delta"] > 1:
         return df.at[i, "avg_price"] < df.at[i - 1, "avg_price"]
     return False
+
+
+def bb_long(df: pd.DataFrame, i) -> bool:
+
+    if (
+        df.at[i, "close"] > df.at[i, "open"]
+        and df.at[i - 1, "close"] < df.at[i - 1, "open"]
+    ):
+        return (
+            df.at[i, "close"] > df.at[i, "lower_bb"] > df.at[i, "low"]
+            and df.at[i - 1, "open"] > df.at[i, "lower_bb"] > df.at[i - 1, "low"]
+        )
+    return False
+
+
+def bb_short(df: pd.DataFrame, i) -> bool:
+
+    if (
+        df.at[i, "close"] < df.at[i, "open"]
+        and df.at[i - 1, "close"] > df.at[i - 1, "open"]
+    ):
+        return (
+            df.at[i, "high"] > df.at[i, "upper_bb"] > df.at[i, "close"]
+            and df.at[i - 1, "high"] > df.at[i, "upper_bb"] > df.at[i - 1, "open"]
+        )
+    return False

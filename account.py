@@ -64,7 +64,7 @@ async def open_position(
     key, secret, symbol, side, quantity, price, stopSide, stopPrice, profitPrice
 ):
     gtd = (
-        datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=12)
+        datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=59)
     ).timestamp()
     goodTillDate = int(gtd * 1000)
 
@@ -114,15 +114,18 @@ async def open_position(
         logging.error(f"Unexpected error occurred(open_position){symbol}: {error}")
 
 
-async def tp_sl(key, secret, symbol, side, quantity):
+async def close_position(key, secret, symbol, stopSide, quantity, price):
+
     loop = asyncio.get_running_loop()
     um_futures_client = UMFutures(key=key, secret=secret)
     func = partial(
         um_futures_client.new_order,
         symbol=symbol,
-        side=side,
-        type="MARKET",
+        side=stopSide,
+        type="LIMIT",
+        price=price,
         quantity=quantity,
+        timeInForce="GTC",
         reduceOnly="true",
     )
     try:
@@ -130,7 +133,7 @@ async def tp_sl(key, secret, symbol, side, quantity):
 
     except ClientError as error:
         logging.error(
-            f"Found error. status(tp_sl){symbol}: {error.status_code}, error code: {error.error_code}, error message: {error.error_message}"
+            f"Found error. close position {symbol}: {error.status_code}, error code: {error.error_code}, error message: {error.error_message}"
         )
     except Exception as error:
         logging.error(f"Unexpected error occurred(tp_sl){symbol}: {error}")
