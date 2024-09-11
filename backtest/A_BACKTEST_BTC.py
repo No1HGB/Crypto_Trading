@@ -43,8 +43,6 @@ for i in range(24, len(df)):
 
     X_data = x_data_backtest(df, symbol, i)
     pred = model.predict(X_data)
-    prob_lst = model.predict_proba(X_data)
-    prob = max(prob_lst[0])
 
     if position == 1:
         current_price = df.at[i, "close"]

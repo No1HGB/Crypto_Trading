@@ -17,10 +17,12 @@ entry_price = 0
 take_profit_price = 0
 stop_loss_price = 0
 model_dir = f"../train/models/gb_classifier_{symbol}.pkl"
+model_btc_dir = f"../train/models/gb_classifier_BTCUSDT.pkl"
 
 cnt_criteria = 6
 
 model = joblib.load(model_dir)
+model_btc = joblib.load(model_btc_dir)
 
 # 익절, 손절 조건 설정
 take_profit_ratio = 0.0135
@@ -34,6 +36,9 @@ df: pd.DataFrame = fetch_data(symbol=symbol, interval=interval, numbers=450)
 df = cal_values(df)
 print(df.shape)
 
+df_btc = fetch_data(symbol="BTCUSDT", interval=interval, numbers=450)
+df_btc = cal_values(df_btc)
+print(df_btc.shape)
 
 # 백테스트 실행
 for i in range(24, len(df)):
@@ -42,8 +47,9 @@ for i in range(24, len(df)):
 
     X_data = x_data_backtest(df, symbol, i)
     pred = model.predict(X_data)
-    prob_lst = model.predict_proba(X_data)
-    prob = max(prob_lst[0])
+
+    X_data_btc = x_data_backtest(df_btc, symbol, i)
+    pred_btc = model.predict(X_data_btc)
 
     if position == 1:
         current_price = df.at[i, "close"]
