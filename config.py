@@ -11,8 +11,14 @@ leverage = 5
 interval = "1h"  # 1h,4h,1d
 ratio = 20  # margin ratio per balance (%)
 
-tp_btc = 1.5  # take profit ratio for price (%)
-sl_btc = 1.5  # stop loss ratio for price (%)
+# tp/sl atr
+tp_btc_atr = 1.8
+sl_btc_atr = 1.5
+tp_eth_atr = 1.51
+sl_eth_atr = 1.3
 
-tp_eth = 1.35  # take profit ratio for price (%)
-sl_eth = 0.6  # stop loss ratio for price (%)
+# tp/sl percent
+tp_btc = 1.5
+sl_btc = 1.5
+tp_eth = 1.35
+sl_eth = 0.7

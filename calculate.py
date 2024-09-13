@@ -41,9 +41,9 @@ def cal_profit_price(entryPrice, side, symbol):
 
 def cal_stop_loss_atr(entryPrice, ATR, side, symbol):
     if symbol == "BTCUSDT":
-        multiply = 1.5
+        multiply = config.sl_btc_atr
     else:
-        multiply = 1.5
+        multiply = config.sl_eth_atr
 
     if side == "BUY":
         stopPrice = entryPrice - multiply * ATR
@@ -60,9 +60,9 @@ def cal_stop_loss_atr(entryPrice, ATR, side, symbol):
 
 def cal_take_profit_atr(entryPrice, ATR, side, symbol):
     if symbol == "BTCUSDT":
-        multiply = 1.8
+        multiply = config.tp_btc_atr
     else:
-        multiply = 1.5
+        multiply = config.tp_eth_atr
 
     if side == "BUY":
         stopPrice = entryPrice + multiply * ATR
