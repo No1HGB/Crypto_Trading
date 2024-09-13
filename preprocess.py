@@ -92,8 +92,10 @@ def make_data(df, symbol, n=6):
 
     if symbol == "BTCUSDT":
         days = 24
+        f_days = 6
     else:
-        days = 24
+        days = 48
+        f_days = 4
 
     for i in range(days, len(df) - n):
         use_cols = [
@@ -116,7 +118,7 @@ def make_data(df, symbol, n=6):
         X_vector = df.iloc[i - days : i][use_cols].values.flatten()
         X_data.append(X_vector)
 
-        if df.iloc[i]["close"] < df.iloc[i + 6]["close"]:
+        if df.iloc[i]["close"] < df.iloc[i + f_days]["close"]:
             y_data.append(1)
         else:
             y_data.append(0)

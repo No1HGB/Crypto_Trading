@@ -8,12 +8,12 @@ from fetch import fetch_data
 # 변수 설정
 symbol = "ETHUSDT"
 interval = "1h"
-model_dir = f"models/gb_classifier_{symbol}.pkl"
+model_dir = f"models/gb_classifier_{symbol}_update.pkl"
 
 # 조정 변수
 data_num = 24700
 split_ratio = 0.99
-is_save = True
+is_save = False
 
 # 데이터 로드
 df = fetch_data(symbol, interval, data_num)

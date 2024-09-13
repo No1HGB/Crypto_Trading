@@ -54,7 +54,6 @@ async def main(symbol, leverage, interval):
         # 포지션 가져오기
         position = await get_position(key, secret, symbol)
         positionAmt = float(position["positionAmt"])
-        [balance, available] = await get_balance(key, secret)
 
         # 롱 포지션 종료
         if positionAmt > 0:
