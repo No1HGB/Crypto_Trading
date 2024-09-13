@@ -136,24 +136,40 @@ for i in range(24, len(df)):
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
             entry_price = df.at[i, "close"]
+            ATR = df.at[i, "ATR"]
             position_cnt = 1
 
+            # # 손절가 설정
+            # stop_loss_price = entry_price * (1 - stop_loss_ratio)
+            # # 익절가 설정
+            # take_profit_price = entry_price * (1 + take_profit_ratio)
+
             # 손절가 설정
-            stop_loss_price = entry_price * (1 - stop_loss_ratio)
+            stop_loss_price = entry_price - 1.5 * ATR
             # 익절가 설정
-            take_profit_price = entry_price * (1 + take_profit_ratio)
+            take_profit_price = entry_price + 1.8 * ATR
+
+            cal = (1.5 * ATR / entry_price) * 100
 
         elif pred == 0:
             position = 0
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
             entry_price = df.at[i, "close"]
+            ATR = df.at[i, "ATR"]
             position_cnt = 1
 
+            # # 손절가 설정
+            # stop_loss_price = entry_price * (1 + stop_loss_ratio)
+            # # 익절가 설정
+            # take_profit_price = entry_price * (1 - take_profit_ratio)
+
             # 손절가 설정
-            stop_loss_price = entry_price * (1 + stop_loss_ratio)
+            stop_loss_price = entry_price + 1.5 * ATR
             # 익절가 설정
-            take_profit_price = entry_price * (1 - take_profit_ratio)
+            take_profit_price = entry_price - 1.8 * ATR
+
+            cal = (1.5 * ATR / entry_price) * 100
 
 
 # 백테스트 결과 계산

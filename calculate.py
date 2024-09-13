@@ -37,3 +37,41 @@ def cal_profit_price(entryPrice, side, symbol):
         stopPrice = round(stopPrice, 2)
 
     return stopPrice
+
+
+def cal_stop_loss_atr(entryPrice, ATR, side, symbol):
+    if symbol == "BTCUSDT":
+        multiply = 1.5
+    else:
+        multiply = 1.5
+
+    if side == "BUY":
+        stopPrice = entryPrice - multiply * ATR
+    else:
+        stopPrice = entryPrice + multiply * ATR
+
+    if symbol == "BTCUSDT":
+        stopPrice = round(stopPrice, 1)
+    else:
+        stopPrice = round(stopPrice, 2)
+
+    return stopPrice
+
+
+def cal_take_profit_atr(entryPrice, ATR, side, symbol):
+    if symbol == "BTCUSDT":
+        multiply = 1.8
+    else:
+        multiply = 1.5
+
+    if side == "BUY":
+        stopPrice = entryPrice + multiply * ATR
+    else:
+        stopPrice = entryPrice - multiply * ATR
+
+    if symbol == "BTCUSDT":
+        stopPrice = round(stopPrice, 1)
+    else:
+        stopPrice = round(stopPrice, 2)
+
+    return stopPrice

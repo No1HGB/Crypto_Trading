@@ -4,7 +4,7 @@ import joblib
 import config
 from preprocess import cal_values, x_data
 from fetch import fetch_data_async
-from calculate import cal_stop_price, cal_profit_price
+from calculate import cal_stop_loss_atr, cal_take_profit_atr
 from util import (
     setup_logging,
     wait_until_next_interval,
@@ -99,10 +99,11 @@ async def main(symbol, leverage, interval):
             # 롱
             if pred == 1:
                 entryPrice = last_row["close"]
+                ATR = last_row["ATR"]
                 raw_quantity = balance * (ratio / 100) / entryPrice * leverage
                 quantity = format_quantity(raw_quantity, symbol)
-                stopPrice = cal_stop_price(entryPrice, "BUY", symbol)
-                profitPrice = cal_profit_price(entryPrice, "BUY", symbol)
+                stopPrice = cal_stop_loss_atr(entryPrice, ATR, "BUY", symbol)
+                profitPrice = cal_take_profit_atr(entryPrice, ATR, "BUY", symbol)
 
                 await open_position(
                     key,
@@ -122,10 +123,11 @@ async def main(symbol, leverage, interval):
             # 숏
             elif pred == 0:
                 entryPrice = last_row["close"]
+                ATR = last_row["ATR"]
                 raw_quantity = balance * (ratio / 100) / entryPrice * leverage
                 quantity = format_quantity(raw_quantity, symbol)
-                stopPrice = cal_stop_price(entryPrice, "SELL", symbol)
-                profitPrice = cal_profit_price(entryPrice, "SELL", symbol)
+                stopPrice = cal_stop_loss_atr(entryPrice, ATR, "SELL", symbol)
+                profitPrice = cal_take_profit_atr(entryPrice, ATR, "SELL", symbol)
 
                 await open_position(
                     key,
@@ -152,7 +154,7 @@ async def run_multiple_tasks():
     # 여러 매개변수로 main 함수를 비동기적으로 실행
     await asyncio.gather(
         main(symbols[0], leverage, interval),
-        # main(symbols[1], leverage, interval),
+        main(symbols[1], leverage, interval),
     )
 
 

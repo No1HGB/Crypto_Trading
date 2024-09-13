@@ -16,17 +16,15 @@ position_cnt = 0
 entry_price = 0
 take_profit_price = 0
 stop_loss_price = 0
-model_dir = f"../train/models/gb_classifier_{symbol}_update.pkl"
-model_btc_dir = f"../train/models/gb_classifier_BTCUSDT.pkl"
+model_dir = f"../train/models/gb_classifier_{symbol}.pkl"
 
 cnt_criteria = 6
 
 model = joblib.load(model_dir)
-model_btc = joblib.load(model_btc_dir)
 
 # 익절, 손절 조건 설정
 take_profit_ratio = 0.0135
-stop_loss_ratio = 0.006
+stop_loss_ratio = 0.009
 
 # 백테스트 결과를 저장할 변수 초기화
 win_count = 0
@@ -37,7 +35,7 @@ df = cal_values(df)
 print(df.shape)
 
 # 백테스트 실행
-for i in range(48, len(df)):
+for i in range(24, len(df)):
     if capital <= 0:
         break
 
@@ -136,24 +134,40 @@ for i in range(48, len(df)):
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
             entry_price = df.at[i, "close"]
+            ATR = df.at[i, "ATR"]
             position_cnt = 1
 
+            # # 손절가 설정
+            # stop_loss_price = entry_price * (1 - stop_loss_ratio)
+            # # 익절가 설정
+            # take_profit_price = entry_price * (1 + take_profit_ratio)
+
             # 손절가 설정
-            stop_loss_price = entry_price * (1 - stop_loss_ratio)
+            stop_loss_price = entry_price - 1.5 * ATR
             # 익절가 설정
-            take_profit_price = entry_price * (1 + take_profit_ratio)
+            take_profit_price = entry_price + 1.5 * ATR
+
+            cal = (1.5 * ATR / entry_price) * 100
 
         elif pred == 0:
             position = 0
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
             entry_price = df.at[i, "close"]
+            ATR = df.at[i, "ATR"]
             position_cnt = 1
 
+            # # 손절가 설정
+            # stop_loss_price = entry_price * (1 + stop_loss_ratio)
+            # # 익절가 설정
+            # take_profit_price = entry_price * (1 - take_profit_ratio)
+
             # 손절가 설정
-            stop_loss_price = entry_price * (1 + stop_loss_ratio)
+            stop_loss_price = entry_price + 1.5 * ATR
             # 익절가 설정
-            take_profit_price = entry_price * (1 - take_profit_ratio)
+            take_profit_price = entry_price - 1.5 * ATR
+
+            cal = (1.5 * ATR / entry_price) * 100
 
 
 # 백테스트 결과 계산

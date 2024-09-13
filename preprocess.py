@@ -3,10 +3,6 @@ import pandas as pd
 
 
 def cal_values(df: pd.DataFrame) -> pd.DataFrame:
-    df["ma4"] = df["close"].rolling(window=4).mean()
-    df["std4"] = df["close"].rolling(window=4).std()
-    df["upper_bb4"] = df["ma4"] + 4 * df["std4"]
-    df["lower_bb4"] = df["ma4"] - 4 * df["std4"]
     df["ma20"] = df["close"].rolling(window=20).mean()
     df["std20"] = df["close"].rolling(window=20).std()
     df["upper_bb"] = df["ma20"] + 2 * df["std20"]
@@ -26,10 +22,6 @@ def cal_values(df: pd.DataFrame) -> pd.DataFrame:
     df["up_delta"] = df["high"] / df[["open", "close"]].max(axis=1)
     df["down_delta"] = df["low"] / df[["open", "close"]].min(axis=1)
 
-    df["d4"] = df["close"] / df["ma4"]
-    df["dup4"] = df["close"] / df["upper_bb4"]
-    df["dlow4"] = df["close"] / df["lower_bb4"]
-
     df["d20"] = df["close"] / df["ma20"]
     df["dup"] = df["close"] / df["upper_bb"]
     df["dlow"] = df["close"] / df["lower_bb"]
@@ -44,11 +36,14 @@ def cal_values(df: pd.DataFrame) -> pd.DataFrame:
     df["ed50"] = df["close"] / df["ema50"]
     df["ed200"] = df["close"] / df["ema200"]
 
-    df.drop(
-        ["volume", "std4", "std20"],
-        axis=1,
-        inplace=True,
-    )
+    # ATR 계산
+    df["previous_close"] = df["close"].shift(1)
+    df["high_low"] = df["high"] - df["low"]
+    df["high_pc"] = np.abs(df["high"] - df["previous_close"])
+    df["low_pc"] = np.abs(df["low"] - df["previous_close"])
+    df["TR"] = df[["high_low", "high_pc", "low_pc"]].max(axis=1)
+    df["ATR"] = df["TR"].rolling(window=14).mean()
+
     df.dropna(axis=0, inplace=True, how="any")
     df.reset_index(drop=True, inplace=True)
 
@@ -86,16 +81,16 @@ def x_data(df: pd.DataFrame, symbol: str):
     return X_data
 
 
-def make_data(df, symbol, n=6):
+def make_data(df, symbol):
     X_data = []
     y_data = []
 
     if symbol == "BTCUSDT":
         days = 24
-        f_days = 6
+        n = f_days = 6
     else:
-        days = 48
-        f_days = 4
+        days = 24
+        n = f_days = 6
 
     for i in range(days, len(df) - n):
         use_cols = [
