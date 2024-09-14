@@ -6,9 +6,9 @@ from preprocess import cal_values, make_data
 from fetch import fetch_data
 
 # 변수 설정
-symbol = "BTCUSDT"
+symbol = "SOLUSDT"
 interval = "1h"
-model_dir = f"models/gb_classifier_{symbol}_update.pkl"
+model_dir = f"models/gb_classifier_{symbol}.pkl"
 
 # 조정 변수
 data_num = 30700

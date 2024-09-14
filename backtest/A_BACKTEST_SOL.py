@@ -6,7 +6,7 @@ from preprocess import cal_values, x_data_backtest
 import joblib
 
 # 초기값 설정
-symbol = "ETHUSDT"
+symbol = "SOLUSDT"
 interval = "1h"
 
 initial_capital = 1000
@@ -25,14 +25,14 @@ cnt_criteria = 6
 model = joblib.load(model_dir)
 
 # 익절, 손절 조건 설정
-tp_atr = 1.51
-sl_atr = 1.3
+tp_atr = 2
+sl_atr = 1.2
 
 # 백테스트 결과를 저장할 변수 초기화
 win_count = 0
 loss_count = 0
 
-df: pd.DataFrame = fetch_data(symbol=symbol, interval=interval, numbers=400)
+df: pd.DataFrame = fetch_data(symbol=symbol, interval=interval, numbers=450)
 df = cal_values(df)
 print(df.shape)
 
@@ -133,7 +133,7 @@ for i in range(24, len(df)):
                 position_cnt = 0
 
     if position == -1:  # 포지션이 없다면
-        if pred == 1:
+        if (pred == 1 and not t_short) or t_long:
             position = 1
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
@@ -146,7 +146,7 @@ for i in range(24, len(df)):
             # 익절가 설정
             take_profit_price = entry_price + tp_atr * ATR
 
-        elif pred == 0:
+        elif (pred == 0 and not t_long) or t_short:
             position = 0
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)

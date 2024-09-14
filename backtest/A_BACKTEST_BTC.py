@@ -1,6 +1,8 @@
 import pandas as pd
 from fetch import fetch_data
+
 from preprocess import cal_values, x_data_backtest
+from backtest_logic import trend_long, trend_short
 import joblib
 
 # 초기값 설정
@@ -24,8 +26,8 @@ cnt_criteria = 6
 model = joblib.load(model_dir)
 
 # 익절, 손절 조건 설정
-tp_atr = 1.8
-sl_atr = 1.5
+tp_atr = 2.3
+sl_atr = 2
 
 # 백테스트 결과를 저장할 변수 초기화
 win_count = 0
@@ -43,6 +45,8 @@ for i in range(24, len(df)):
 
     X_data = x_data_backtest(df, symbol, i)
     pred = model.predict(X_data)
+    t_long = trend_long(df, i)
+    t_short = trend_short(df, i)
 
     if position == 1:
         current_price = df.at[i, "close"]

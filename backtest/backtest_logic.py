@@ -95,3 +95,29 @@ def bb_short(df: pd.DataFrame, i) -> bool:
             and df.at[i - 1, "high"] > df.at[i, "upper_bb"] > df.at[i - 1, "open"]
         )
     return False
+
+
+def trend_long(df: pd.DataFrame, i) -> bool:
+
+    up_max = df.iloc[i - 7 : i][["open", "close"]].max().max()
+
+    if df.at[i, "close"] > df.at[i, "open"]:
+        return (
+            df.at[i, "close"] > up_max
+            and df.at[i, "ema10"] > df.at[i, "ema20"] > df.at[i, "ema50"]
+        )
+
+    return False
+
+
+def trend_short(df: pd.DataFrame, i) -> bool:
+
+    down_min = df.iloc[i - 7 : i][["open", "close"]].min().min()
+
+    if df.at[i, "close"] < df.at[i, "open"]:
+        return (
+            df.at[i, "close"] < down_min
+            and df.at[i, "ema10"] < df.at[i, "ema20"] < df.at[i, "ema50"]
+        )
+
+    return False
