@@ -3,6 +3,7 @@ import numpy as np
 from fetch import fetch_data
 
 from preprocess import cal_values, x_data_backtest
+from backtest_logic import trend_long, trend_short
 import joblib
 
 # 초기값 설정
@@ -19,16 +20,16 @@ position_cnt = 0
 entry_price = 0
 take_profit_price = 0
 stop_loss_price = 0
-model_dir = f"../train/models/gb_classifier_{symbol}_update.pkl"
+model_dir = f"../train/models/gb_classifier_{symbol}.pkl"
 
-cnt_criteria = 4
-prob_baseline = 0.6
+cnt_criteria = 6
+prob_baseline = 0.5
 
 model = joblib.load(model_dir)
 
 # 익절, 손절 조건 설정
-tp_atr = 33
-sl_atr = 33
+tp_atr = 2.3
+sl_atr = 2
 
 # 백테스트 결과를 저장할 변수 초기화
 win_count = 0
@@ -40,15 +41,15 @@ print(df.shape)
 
 
 # 백테스트 실행
-for i in range(48, len(df)):
+for i in range(24, len(df)):
     if capital <= 0:
         break
 
     X_data = x_data_backtest(df, symbol, i)
     pred = model.predict(X_data)
     prob = np.max(model.predict_proba(X_data), axis=1)
-    # t_long = trend_long(df, i)
-    # t_short = trend_short(df, i)
+    t_long = trend_long(df, i)
+    t_short = trend_short(df, i)
 
     if position == 1:
         current_price = df.at[i, "close"]
@@ -137,7 +138,7 @@ for i in range(48, len(df)):
                 position_cnt = 0
 
     if position == -1:  # 포지션이 없다면
-        if pred == 1 and prob >= prob_baseline:
+        if pred == 1 and not t_short:
             position = 1
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
@@ -150,7 +151,7 @@ for i in range(48, len(df)):
             # 익절가 설정
             take_profit_price = entry_price + tp_atr * ATR
 
-        elif pred == 0 and prob >= prob_baseline:
+        elif pred == 0 and not t_long:
             position = 0
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)

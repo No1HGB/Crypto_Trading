@@ -3,25 +3,29 @@ import pandas as pd
 
 def trend_long(df: pd.DataFrame) -> bool:
     last_row = df.iloc[-1]
-    up_max = df.iloc[-7:-1][["open", "close"]].max().max()
+    second_last_row = df.iloc[-2]
+    third_last_row = df.iloc[-3]
 
-    if last_row["close"] > last_row["open"]:
+    def is_trend(row: pd.DataFrame) -> bool:
         return (
-            last_row["close"] > up_max
-            and last_row["ema10"] > last_row["ema20"] > last_row["ema50"]
+            row["close"] > row["upper_bb"]
+            and row["ema10"] > row["ema20"] > row["ema50"]
+            and row["ma10"] > row["ma20"] > row["ma50"]
         )
 
-    return False
+    return is_trend(last_row) or is_trend(second_last_row) or is_trend(third_last_row)
 
 
 def trend_short(df: pd.DataFrame) -> bool:
     last_row = df.iloc[-1]
-    down_min = df.iloc[7:-1][["open", "close"]].min().min()
+    second_last_row = df.iloc[-2]
+    third_last_row = df.iloc[-3]
 
-    if last_row["close"] < last_row["open"]:
+    def is_trend(row: pd.DataFrame) -> bool:
         return (
-            last_row["close"] < down_min
-            and last_row["ema10"] < last_row["ema20"] < last_row["ema50"]
+            row["close"] < row["lower_bb"]
+            and row["ema10"] < row["ema20"] < row["ema50"]
+            and row["ma10"] < row["ma20"] < row["ma50"]
         )
 
-    return False
+    return is_trend(last_row) or is_trend(second_last_row) or is_trend(third_last_row)

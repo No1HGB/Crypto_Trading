@@ -21,7 +21,7 @@ stop_loss_price = 0
 model_dir = f"../train/models/gb_classifier_{symbol}.pkl"
 
 cnt_criteria = 6
-prob_baseline = 0.6
+prob_baseline = 0.5
 
 model = joblib.load(model_dir)
 
@@ -134,7 +134,7 @@ for i in range(24, len(df)):
                 position_cnt = 0
 
     if position == -1:  # 포지션이 없다면
-        if pred == 1:
+        if pred == 1 and not t_short:
             position = 1
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
@@ -147,7 +147,7 @@ for i in range(24, len(df)):
             # 익절가 설정
             take_profit_price = entry_price + tp_atr * ATR
 
-        elif pred == 0:
+        elif pred == 0 and not t_long:
             position = 0
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)

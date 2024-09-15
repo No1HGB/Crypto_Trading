@@ -19,6 +19,7 @@ from account import (
     close_position,
     cancel_orders,
 )
+from logic import trend_long, trend_short
 
 
 async def main(symbol, leverage, interval):
@@ -50,6 +51,10 @@ async def main(symbol, leverage, interval):
         model = joblib.load(model_dir)
         X_data = x_data(df, symbol)
         pred = model.predict(X_data)
+
+        # 추세 장
+        t_long = trend_long(df)
+        t_short = trend_short(df)
 
         # 포지션 가져오기
         position = await get_position(key, secret, symbol)
@@ -97,7 +102,7 @@ async def main(symbol, leverage, interval):
             position_cnt = 0
 
             # 롱
-            if pred == 1:
+            if pred == 1 and not t_short:
                 entryPrice = last_row["close"]
                 ATR = last_row["ATR"]
                 raw_quantity = balance * (ratio / 100) / entryPrice * leverage
@@ -121,7 +126,7 @@ async def main(symbol, leverage, interval):
                 logging.info(f"{symbol} {interval} long position open.")
 
             # 숏
-            elif pred == 0:
+            elif pred == 0 and not t_long:
                 entryPrice = last_row["close"]
                 ATR = last_row["ATR"]
                 raw_quantity = balance * (ratio / 100) / entryPrice * leverage
