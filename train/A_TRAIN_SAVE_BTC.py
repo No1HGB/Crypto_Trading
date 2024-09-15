@@ -1,5 +1,6 @@
 from sklearn.metrics import accuracy_score
 from xgboost import XGBClassifier
+import numpy as np
 import joblib
 
 from preprocess import cal_values, make_data
@@ -11,9 +12,10 @@ interval = "1h"
 model_dir = f"models/gb_classifier_{symbol}_update.pkl"
 
 # 조정 변수
-data_num = 30700
+data_num = 37700
 split_ratio = 0.99
-is_save = True
+prob_baseline = 0.6
+is_save = False
 
 # 데이터 로드
 df = fetch_data(symbol, interval, data_num)
@@ -47,8 +49,23 @@ y_pred_test = model.predict(X_test)
 y_prob_test = model.predict_proba(X_test)
 accuracy_test = accuracy_score(y_test, y_pred_test)
 print(accuracy_test, len(y_test))
+print(np.max(y_prob_test, axis=1))
 
 # 모델 저장
 if is_save:
     joblib.dump(model, model_dir)
     print(f"{symbol} Model save success!")
+
+# 확률 슬라이싱
+process_y_test = []
+process_y_pred_test = []
+for i, prob_box in enumerate(y_prob_test):
+    prob = max(prob_box)
+    if prob >= prob_baseline:
+        process_y_test.append(y_test[i])
+        process_y_pred_test.append(y_pred_test[i])
+
+process_accuracy = accuracy_score(
+    np.array(process_y_test), np.array(process_y_pred_test)
+)
+print(process_accuracy, len(process_y_test))

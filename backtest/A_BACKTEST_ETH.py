@@ -21,6 +21,7 @@ stop_loss_price = 0
 model_dir = f"../train/models/gb_classifier_{symbol}.pkl"
 
 cnt_criteria = 6
+prob_baseline = 0.6
 
 model = joblib.load(model_dir)
 
