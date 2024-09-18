@@ -22,14 +22,12 @@ take_profit_price = 0
 stop_loss_price = 0
 model_dir = f"../train/models/gb_classifier_{symbol}.pkl"
 
-cnt_criteria = 6
-prob_baseline = 0.5
+prob_baseline = 0.6
 
 model = joblib.load(model_dir)
 
 # 익절, 손절 조건 설정
-tp_atr = 2.3
-sl_atr = 2
+sl_atr = 1.5
 
 # 백테스트 결과를 저장할 변수 초기화
 win_count = 0
@@ -41,7 +39,7 @@ print(df.shape)
 
 
 # 백테스트 실행
-for i in range(24, len(df)):
+for i in range(48, len(df)):
     if capital <= 0:
         break
 
@@ -64,18 +62,7 @@ for i in range(24, len(df)):
             position = -1
             position_cnt = 0
 
-        elif df.at[i, "high"] >= take_profit_price >= df.at[i, "low"]:
-            profit = (
-                margin * leverage * abs(take_profit_price - entry_price) / entry_price
-            )
-
-            capital += profit
-            win_count += 1
-            margin = 0
-            position = -1
-            position_cnt = 0
-
-        elif position_cnt == cnt_criteria:
+        elif df.at[i, "ha_close"] < df.at[i, "ha_open"]:
             profit_loss = (
                 margin * leverage * (current_price - entry_price) / entry_price
             )
@@ -107,20 +94,9 @@ for i in range(24, len(df)):
             position = -1
             position_cnt = 0
 
-        elif df.at[i, "high"] >= take_profit_price >= df.at[i, "low"]:
-            profit = (
-                margin * leverage * abs(take_profit_price - entry_price) / entry_price
-            )
-
-            capital += profit
-            win_count += 1
-            margin = 0
-            position = -1
-            position_cnt = 0
-
-        elif position_cnt == cnt_criteria:
+        elif df.at[i, "ha_close"] > df.at[i, "ha_open"]:
             profit_loss = (
-                margin * leverage * (entry_price - current_price) / entry_price
+                margin * leverage * (current_price - entry_price) / entry_price
             )
 
             if profit_loss > 0:
@@ -138,7 +114,7 @@ for i in range(24, len(df)):
                 position_cnt = 0
 
     if position == -1:  # 포지션이 없다면
-        if pred == 1 and not t_short:
+        if pred == 2 and prob >= prob_baseline and not t_short:
             position = 1
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
@@ -148,10 +124,8 @@ for i in range(24, len(df)):
 
             # 손절가 설정
             stop_loss_price = entry_price - sl_atr * ATR
-            # 익절가 설정
-            take_profit_price = entry_price + tp_atr * ATR
 
-        elif pred == 0 and not t_long:
+        elif pred == 1 and prob >= prob_baseline and not t_long:
             position = 0
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
@@ -161,8 +135,6 @@ for i in range(24, len(df)):
 
             # 손절가 설정
             stop_loss_price = entry_price + sl_atr * ATR
-            # 익절가 설정
-            take_profit_price = entry_price - tp_atr * ATR
 
 
 # 백테스트 결과 계산

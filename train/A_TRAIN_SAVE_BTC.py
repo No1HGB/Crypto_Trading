@@ -30,8 +30,11 @@ X_train = X_data[:split]
 y_train = y_data[:split]
 X_test = X_data[split:]
 y_test = y_data[split:]
-print("Shape")
-print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
+print("Shape", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
+# 0이 아닌 경우 개수 체크
+non_zero_indices = y_data != 0
+y_data_non_zero = y_data[non_zero_indices]
+print("Non Zero Shape", y_data_non_zero.shape)
 
 # 모델 생성
 model = XGBClassifier(
@@ -49,23 +52,29 @@ y_pred_test = model.predict(X_test)
 y_prob_test = model.predict_proba(X_test)
 accuracy_test = accuracy_score(y_test, y_pred_test)
 print(accuracy_test, len(y_test))
-print(np.max(y_prob_test, axis=1))
+# print(np.max(y_prob_test, axis=1))
+
 
 # 모델 저장
 if is_save:
     joblib.dump(model, model_dir)
     print(f"{symbol} Model save success!")
 
-# 확률 슬라이싱
-process_y_test = []
-process_y_pred_test = []
-for i, prob_box in enumerate(y_prob_test):
-    prob = max(prob_box)
-    if prob >= prob_baseline:
-        process_y_test.append(y_test[i])
-        process_y_pred_test.append(y_pred_test[i])
 
-process_accuracy = accuracy_score(
-    np.array(process_y_test), np.array(process_y_pred_test)
-)
-print(process_accuracy, len(process_y_test))
+# 확률 슬라이싱
+def slice_prob(prob_baseline, y_test, y_pred_test, y_prob_test):
+    process_y_test = []
+    process_y_pred_test = []
+    for i, prob_box in enumerate(y_prob_test):
+        prob = max(prob_box)
+        if prob >= prob_baseline:
+            process_y_test.append(y_test[i])
+            process_y_pred_test.append(y_pred_test[i])
+
+    process_accuracy = accuracy_score(
+        np.array(process_y_test), np.array(process_y_pred_test)
+    )
+    print(process_accuracy, len(process_y_test))
+
+
+slice_prob(prob_baseline, y_test, y_pred_test, y_prob_test)

@@ -1,5 +1,6 @@
 import logging, asyncio
 import joblib
+import numpy as np
 
 import config
 from preprocess import cal_values, x_data
@@ -28,8 +29,8 @@ async def main(symbol, leverage, interval):
     ratio = config.ratio
     data_num = 337
     start = 0
-    position_cnt = 0
-    model_dir = f"train/models/gb_classifier_{symbol}.pkl"
+    prob_baseline = 0.6
+    model_dir = f"train/models/gb_classifier_BTCUSDT.pkl"
 
     # 첫 시작 시 해당 심볼 레버리지 변경
     if start == 0:
@@ -42,6 +43,10 @@ async def main(symbol, leverage, interval):
         await wait_until_next_interval(interval=interval)
         logging.info(f"{symbol} {interval} next interval")
 
+        # BTC 데이터
+        df_btc = await fetch_data_async("BTCUSDT", interval, data_num)
+        df_btc = cal_values(df_btc)
+
         # 데이터 로드
         df = await fetch_data_async(symbol, interval, data_num)
         df = cal_values(df)
@@ -49,8 +54,9 @@ async def main(symbol, leverage, interval):
 
         # 메인 예측 결과 가져오기
         model = joblib.load(model_dir)
-        X_data = x_data(df, symbol)
+        X_data = x_data(df_btc, symbol)
         pred = model.predict(X_data)
+        prob = np.max(model.predict_proba(X_data), axis=1)
 
         # 추세 장
         t_long = trend_long(df)
@@ -62,30 +68,26 @@ async def main(symbol, leverage, interval):
 
         # 롱 포지션 종료
         if positionAmt > 0:
-            position_cnt += 1
 
-            if position_cnt == 6:
+            if last_row["ha_close"] < last_row["ha_open"]:
                 await cancel_orders(key, secret, symbol)
                 logging.info(f"{symbol} open orders cancel for close")
                 quantity = abs(positionAmt)
 
                 await close_position(key, secret, symbol, "SELL", quantity)
-                position_cnt = 0
                 await asyncio.sleep(1.5)
                 # 로그 기록
                 logging.info(f"{symbol} {interval} long position close")
 
         # 숏 포지션 종료
         elif positionAmt < 0:
-            position_cnt += 1
 
-            if position_cnt == 6:
+            if last_row["ha_close"] > last_row["ha_open"]:
                 await cancel_orders(key, secret, symbol)
                 logging.info(f"{symbol} open orders cancel for close")
                 quantity = abs(positionAmt)
 
                 await close_position(key, secret, symbol, "BUY", quantity)
-                position_cnt = 0
                 await asyncio.sleep(1.5)
                 # 로그 기록
                 logging.info(f"{symbol} {interval} short position close")
@@ -99,10 +101,9 @@ async def main(symbol, leverage, interval):
         if positionAmt == 0 and (balance * (ratio / 100) < available):
             await cancel_orders(key, secret, symbol)
             logging.info(f"{symbol} open orders cancel")
-            position_cnt = 0
 
             # 롱
-            if pred == 1 and not t_short:
+            if pred == 2 and prob >= prob_baseline and not t_short:
                 entryPrice = last_row["close"]
                 ATR = last_row["ATR"]
                 raw_quantity = balance * (ratio / 100) / entryPrice * leverage
@@ -121,12 +122,11 @@ async def main(symbol, leverage, interval):
                     stopPrice,
                     profitPrice,
                 )
-                position_cnt = 1
                 # 로그 기록
                 logging.info(f"{symbol} {interval} long position open.")
 
             # 숏
-            elif pred == 0 and not t_long:
+            elif pred == 1 and prob >= prob_baseline and not t_long:
                 entryPrice = last_row["close"]
                 ATR = last_row["ATR"]
                 raw_quantity = balance * (ratio / 100) / entryPrice * leverage
@@ -145,7 +145,6 @@ async def main(symbol, leverage, interval):
                     stopPrice,
                     profitPrice,
                 )
-                position_cnt = 1
                 # 로그 기록
                 logging.info(f"{symbol} {interval} short position open.")
 

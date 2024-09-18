@@ -12,13 +12,13 @@ interval = "1h"  # 1h,4h,1d
 ratio = 20  # margin ratio per balance (%)
 
 # tp/sl atr
-tp_btc_atr = 2.3
-sl_btc_atr = 2
-tp_eth_atr = 1.51
-sl_eth_atr = 1.3
+tp_btc_atr = 12
+sl_btc_atr = 1.5
+tp_eth_atr = 12
+sl_eth_atr = 1.5
 
-# tp/sl percent
-tp_btc = 1.5
-sl_btc = 1.5
-tp_eth = 1.35
-sl_eth = 0.7
+# # tp/sl percent
+# tp_btc = 1.5
+# sl_btc = 1.5
+# tp_eth = 1.35
+# sl_eth = 0.7

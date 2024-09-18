@@ -44,6 +44,27 @@ def cal_values(df: pd.DataFrame) -> pd.DataFrame:
     df["TR"] = df[["high_low", "high_pc", "low_pc"]].max(axis=1)
     df["ATR"] = df["TR"].rolling(window=14).mean()
 
+    # 하이킨아시
+    df["ha_close"] = (df["open"] + df["high"] + df["low"] + df["close"]) / 4
+
+    df["ha_open"] = 0.0
+    df.at[0, "ha_open"] = df.iloc[0]["open"]
+
+    df["ha_high"] = 0.0
+    df["ha_low"] = 0.0
+
+    for i in range(1, len(df)):
+        df.at[i, "ha_open"] = (df.at[i - 1, "ha_open"] + df.at[i - 1, "ha_close"]) / 2
+        df.at[i, "ha_high"] = max(
+            df.at[i, "high"], df.at[i, "ha_open"], df.at[i, "ha_close"]
+        )
+        df.at[i, "ha_low"] = min(
+            df.at[i, "low"], df.at[i, "ha_open"], df.at[i, "ha_close"]
+        )
+
+    df.at[0, "ha_high"] = df.at[0, "high"]
+    df.at[0, "ha_low"] = df.at[0, "low"]
+
     df.dropna(axis=0, inplace=True, how="any")
     df.reset_index(drop=True, inplace=True)
 
@@ -52,9 +73,9 @@ def cal_values(df: pd.DataFrame) -> pd.DataFrame:
 
 def x_data(df: pd.DataFrame, symbol: str):
     if symbol == "BTCUSDT":
-        days = 24
+        days = 48
     else:
-        days = 24
+        days = 48
 
     X_data = []
     use_cols = [
@@ -81,16 +102,21 @@ def x_data(df: pd.DataFrame, symbol: str):
     return X_data
 
 
+"""
+모델 훈련 및 백테스팅
+"""
+
+
 def make_data(df, symbol):
     X_data = []
     y_data = []
 
     if symbol == "BTCUSDT":
-        days = 24
-        n = f_days = 6
+        days = 48
+        n = 2
     else:
-        days = 24
-        n = f_days = 6
+        days = 48
+        n = 2
 
     for i in range(days, len(df) - n):
         use_cols = [
@@ -113,7 +139,15 @@ def make_data(df, symbol):
         X_vector = df.iloc[i - days : i][use_cols].values.flatten()
         X_data.append(X_vector)
 
-        if df.iloc[i]["close"] < df.iloc[i + f_days]["close"]:
+        if (
+            df.iloc[i + 1]["ha_open"] < df.iloc[i + 1]["ha_close"]
+            and df.iloc[i + 2]["ha_open"] < df.iloc[i + 2]["ha_close"]
+        ):
+            y_data.append(2)
+        elif (
+            df.iloc[i + 1]["ha_open"] > df.iloc[i + 1]["ha_close"]
+            and df.iloc[i + 2]["ha_open"] > df.iloc[i + 2]["ha_close"]
+        ):
             y_data.append(1)
         else:
             y_data.append(0)
@@ -126,9 +160,100 @@ def make_data(df, symbol):
 
 def x_data_backtest(df: pd.DataFrame, symbol: str, i):
     if symbol == "BTCUSDT":
-        days = 24
+        days = 48
     else:
-        days = 24
+        days = 48
+
+    X_data = []
+    use_cols = [
+        "delta",
+        "up_delta",
+        "down_delta",
+        "d20",
+        "dup",
+        "dlow",
+        "volume_delta",
+        "d10",
+        "d50",
+        "d200",
+        "ed10",
+        "ed20",
+        "ed50",
+        "ed200",
+    ]
+
+    # i는 24부터
+    X_vector = df.iloc[i - days : i][use_cols].values.flatten()
+    X_data.append(X_vector)
+    X_data = np.array(X_data)
+
+    return X_data
+
+
+def make_data_v2(df, symbol):
+    X_data = []
+    y_data = []
+
+    if symbol == "BTCUSDT":
+        days = 48
+        n = 3
+    else:
+        days = 48
+        n = 3
+
+    for i in range(days, len(df) - n):
+        use_cols = [
+            "delta",
+            "up_delta",
+            "down_delta",
+            "d20",
+            "dup",
+            "dlow",
+            "volume_delta",
+            "d10",
+            "d50",
+            "d200",
+            "ed10",
+            "ed20",
+            "ed50",
+            "ed200",
+        ]
+
+        X_vector = df.iloc[i - days : i][use_cols].values.flatten()
+        X_data.append(X_vector)
+
+        if (
+            df.iloc[i]["ha_open"] > df.iloc[i]["ha_close"]
+            and df.iloc[i + 1]["ha_open"] < df.iloc[i + 1]["ha_close"]
+            and df.iloc[i + 2]["ha_open"] < df.iloc[i + 2]["ha_close"]
+            and df.iloc[i + 3]["ha_open"] < df.iloc[i + 3]["ha_close"]
+        ):
+            y_data.append(1)
+        elif (
+            df.iloc[i]["ha_open"] < df.iloc[i]["ha_close"]
+            and df.iloc[i + 1]["ha_open"] > df.iloc[i + 1]["ha_close"]
+            and df.iloc[i + 2]["ha_open"] > df.iloc[i + 2]["ha_close"]
+            and df.iloc[i + 3]["ha_open"] > df.iloc[i + 3]["ha_close"]
+        ):
+            y_data.append(0)
+        else:
+            y_data.append(-1)
+
+    X_data = np.array(X_data)
+    y_data = np.array(y_data)
+
+    slice_indices = y_data != -1
+    X_data = X_data[slice_indices]
+    y_data = y_data[slice_indices]
+
+    return X_data, y_data
+
+
+def x_data_backtest_v2(df: pd.DataFrame, symbol: str, i):
+    if symbol == "BTCUSDT":
+        days = 48
+    else:
+        days = 48
 
     X_data = []
     use_cols = [
