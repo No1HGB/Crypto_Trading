@@ -120,7 +120,12 @@ for i in range(48, len(df)):
                 position_cnt = 0
 
     if position == -1:  # 포지션이 없다면
-        if pred == 2 and prob >= prob_baseline and not t_short:
+        if (
+            pred == 2
+            and prob >= prob_baseline
+            and not t_short
+            # and df.at[i, "ha_close"] > df.at[i, "ha_open"]
+        ):
             position = 1
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
@@ -131,7 +136,12 @@ for i in range(48, len(df)):
             # 손절가 설정
             stop_loss_price = entry_price - sl_atr * ATR
 
-        elif pred == 1 and prob >= prob_baseline and not t_long:
+        elif (
+            pred == 1
+            and prob >= prob_baseline
+            and not t_long
+            # and df.at[i, "ha_close"] < df.at[i, "ha_open"]
+        ):
             position = 0
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)

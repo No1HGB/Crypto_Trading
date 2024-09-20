@@ -201,10 +201,26 @@ def make_data_v2(df, symbol):
 
     if symbol == "BTCUSDT":
         days = 48
-        n = 2
+        n = 3
     else:
         days = 48
         n = 2
+
+    def trend_long(i):
+        return (
+            min(df.iloc[i]["ha_open"], df.iloc[i]["ha_close"])
+            < min(df.iloc[i + 1]["ha_open"], df.iloc[i + 1]["ha_close"])
+            < min(df.iloc[i + 2]["ha_open"], df.iloc[i + 2]["ha_close"])
+            < min(df.iloc[i + 3]["ha_open"], df.iloc[i + 3]["ha_close"])
+        )
+
+    def trend_short(i):
+        return (
+            max(df.iloc[i]["ha_open"], df.iloc[i]["ha_close"])
+            > max(df.iloc[i + 1]["ha_open"], df.iloc[i + 1]["ha_close"])
+            > max(df.iloc[i + 2]["ha_open"], df.iloc[i + 2]["ha_close"])
+            > max(df.iloc[i + 3]["ha_open"], df.iloc[i + 3]["ha_close"])
+        )
 
     for i in range(days, len(df) - n):
         use_cols = [
@@ -227,27 +243,19 @@ def make_data_v2(df, symbol):
         X_vector = df.iloc[i - days : i][use_cols].values.flatten()
         X_data.append(X_vector)
 
-        if (
-            df.iloc[i + 1]["ha_open"] < df.iloc[i + 1]["ha_close"]
-            and df.iloc[i + 2]["ha_open"] < df.iloc[i + 2]["ha_close"]
-            and df.iloc[i]["volume_delta"] >= 1
-        ):
+        if trend_long(i):
+            y_data.append(2)
+        elif trend_short(i):
             y_data.append(1)
-        elif (
-            df.iloc[i + 1]["ha_open"] > df.iloc[i + 1]["ha_close"]
-            and df.iloc[i + 2]["ha_open"] > df.iloc[i + 2]["ha_close"]
-            and df.iloc[i]["volume_delta"] >= 1
-        ):
-            y_data.append(0)
         else:
-            y_data.append(-1)
+            y_data.append(0)
 
     X_data = np.array(X_data)
     y_data = np.array(y_data)
 
-    slice_indices = y_data != -1
-    X_data = X_data[slice_indices]
-    y_data = y_data[slice_indices]
+    # slice_indices = y_data != -1
+    # X_data = X_data[slice_indices]
+    # y_data = y_data[slice_indices]
 
     return X_data, y_data
 

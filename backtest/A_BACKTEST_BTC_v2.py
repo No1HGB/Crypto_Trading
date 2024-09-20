@@ -22,7 +22,7 @@ take_profit_price = 0
 stop_loss_price = 0
 model_dir = f"../train/models/gb_classifier_{symbol}_v2.pkl"
 
-prob_baseline = 0.5
+prob_baseline = 0.6
 
 model = joblib.load(model_dir)
 
@@ -62,7 +62,7 @@ for i in range(48, len(df)):
             position = -1
             position_cnt = 0
 
-        elif df.at[i, "ha_close"] < df.at[i, "ha_open"] and position_cnt >= 3:
+        elif df.at[i, "ha_close"] < df.at[i, "ha_open"]:
             profit_loss = (
                 margin * leverage * (current_price - entry_price) / entry_price
             )
@@ -94,7 +94,7 @@ for i in range(48, len(df)):
             position = -1
             position_cnt = 0
 
-        elif df.at[i, "ha_close"] > df.at[i, "ha_open"] and position_cnt >= 3:
+        elif df.at[i, "ha_close"] > df.at[i, "ha_open"]:
             profit_loss = (
                 margin * leverage * (current_price - entry_price) / entry_price
             )
@@ -114,12 +114,7 @@ for i in range(48, len(df)):
                 position_cnt = 0
 
     if position == -1:  # 포지션이 없다면
-        if (
-            pred == 1
-            and df.at[i, "volume_delta"] >= 1
-            and not t_short
-            and prob >= prob_baseline
-        ):
+        if pred == 2 and not t_short and prob >= prob_baseline:
             position = 1
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
@@ -130,12 +125,7 @@ for i in range(48, len(df)):
             # 손절가 설정
             stop_loss_price = entry_price - sl_atr * ATR
 
-        elif (
-            pred == 0
-            and df.at[i, "volume_delta"] >= 1
-            and not t_long
-            and prob >= prob_baseline
-        ):
+        elif pred == 1 and not t_long and prob >= prob_baseline:
             position = 0
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)

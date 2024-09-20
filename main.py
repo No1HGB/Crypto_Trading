@@ -59,6 +59,13 @@ async def main(symbol, leverage, interval):
         df = cal_values(df)
         last_row = df.iloc[-1]
 
+        long_cond: bool = (
+            last_row["ha_open"] < last_row["ha_close"] if symbol == "SOLUSDT" else True
+        )
+        short_cond: bool = (
+            last_row["ha_open"] > last_row["ha_close"] if symbol == "SOLUSDT" else True
+        )
+
         # 메인 예측 결과 가져오기
         model = joblib.load(model_dir)
         X_data = x_data(df_btc, symbol)
@@ -115,7 +122,7 @@ async def main(symbol, leverage, interval):
             position_cnt = 0
 
             # 롱
-            if pred == 2 and prob >= prob_baseline and not t_short:
+            if pred == 2 and prob >= prob_baseline and not t_short and long_cond:
                 entryPrice = last_row["close"]
                 ATR = last_row["ATR"]
                 raw_quantity = balance * (ratio / 100) / entryPrice * leverage
@@ -139,7 +146,7 @@ async def main(symbol, leverage, interval):
                 logging.info(f"{symbol} {interval} long position open.")
 
             # 숏
-            elif pred == 1 and prob >= prob_baseline and not t_long:
+            elif pred == 1 and prob >= prob_baseline and not t_long and short_cond:
                 entryPrice = last_row["close"]
                 ATR = last_row["ATR"]
                 raw_quantity = balance * (ratio / 100) / entryPrice * leverage

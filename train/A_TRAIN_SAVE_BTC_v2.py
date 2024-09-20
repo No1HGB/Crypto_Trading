@@ -32,9 +32,9 @@ X_test = X_data[split:]
 y_test = y_data[split:]
 print("Shape", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 # 0이 아닌 경우 개수 체크
-# non_zero_indices = y_data != 0
-# y_data_non_zero = y_data[non_zero_indices]
-# print("Non Zero Shape", y_data_non_zero.shape)
+non_zero_indices = y_data != 0
+y_data_non_zero = y_data[non_zero_indices]
+print("Non Zero Shape", y_data_non_zero.shape)
 
 # 모델 생성
 model = XGBClassifier(
