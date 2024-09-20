@@ -65,6 +65,11 @@ def cal_values(df: pd.DataFrame) -> pd.DataFrame:
     df.at[0, "ha_high"] = df.at[0, "high"]
     df.at[0, "ha_low"] = df.at[0, "low"]
 
+    # 하이킨아시 필요한 값
+    df["ha_delta"] = df["ha_close"] / df["ha_open"]
+    df["ha_up_delta"] = df["ha_high"] / df[["ha_open", "ha_close"]].max(axis=1)
+    df["ha_down_delta"] = df["ha_low"] / df[["ha_open", "ha_close"]].min(axis=1)
+
     df.dropna(axis=0, inplace=True, how="any")
     df.reset_index(drop=True, inplace=True)
 
@@ -196,10 +201,10 @@ def make_data_v2(df, symbol):
 
     if symbol == "BTCUSDT":
         days = 48
-        n = 3
+        n = 2
     else:
         days = 48
-        n = 3
+        n = 2
 
     for i in range(days, len(df) - n):
         use_cols = [
@@ -223,17 +228,15 @@ def make_data_v2(df, symbol):
         X_data.append(X_vector)
 
         if (
-            df.iloc[i]["ha_open"] > df.iloc[i]["ha_close"]
-            and df.iloc[i + 1]["ha_open"] < df.iloc[i + 1]["ha_close"]
+            df.iloc[i + 1]["ha_open"] < df.iloc[i + 1]["ha_close"]
             and df.iloc[i + 2]["ha_open"] < df.iloc[i + 2]["ha_close"]
-            and df.iloc[i + 3]["ha_open"] < df.iloc[i + 3]["ha_close"]
+            and df.iloc[i]["volume_delta"] >= 1
         ):
             y_data.append(1)
         elif (
-            df.iloc[i]["ha_open"] < df.iloc[i]["ha_close"]
-            and df.iloc[i + 1]["ha_open"] > df.iloc[i + 1]["ha_close"]
+            df.iloc[i + 1]["ha_open"] > df.iloc[i + 1]["ha_close"]
             and df.iloc[i + 2]["ha_open"] > df.iloc[i + 2]["ha_close"]
-            and df.iloc[i + 3]["ha_open"] > df.iloc[i + 3]["ha_close"]
+            and df.iloc[i]["volume_delta"] >= 1
         ):
             y_data.append(0)
         else:

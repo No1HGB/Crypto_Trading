@@ -68,7 +68,7 @@ for i in range(48, len(df)):
             position = -1
             position_cnt = 0
 
-        elif df.at[i, "ha_close"] < df.at[i, "ha_open"]:
+        elif df.at[i, "ha_close"] < df.at[i, "ha_open"] and position_cnt >= 3:
             profit_loss = (
                 margin * leverage * (current_price - entry_price) / entry_price
             )
@@ -100,7 +100,7 @@ for i in range(48, len(df)):
             position = -1
             position_cnt = 0
 
-        elif df.at[i, "ha_close"] > df.at[i, "ha_open"]:
+        elif df.at[i, "ha_close"] > df.at[i, "ha_open"] and position_cnt >= 3:
             profit_loss = (
                 margin * leverage * (current_price - entry_price) / entry_price
             )

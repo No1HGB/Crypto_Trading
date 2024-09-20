@@ -29,8 +29,15 @@ async def main(symbol, leverage, interval):
     ratio = config.ratio
     data_num = 337
     start = 0
-    prob_baseline = 0.6
+    position_cnt = 0
     model_dir = f"train/models/gb_classifier_BTCUSDT.pkl"
+
+    if symbol == "BTCUSDT":
+        prob_baseline = 0.6
+    elif symbol == "ETHUSDT":
+        prob_baseline = 0.6
+    else:
+        prob_baseline = 0.7
 
     # 첫 시작 시 해당 심볼 레버리지 변경
     if start == 0:
@@ -68,27 +75,31 @@ async def main(symbol, leverage, interval):
 
         # 롱 포지션 종료
         if positionAmt > 0:
+            position_cnt += 1
 
-            if last_row["ha_close"] < last_row["ha_open"]:
+            if last_row["ha_close"] < last_row["ha_open"] and position_cnt >= 3:
                 await cancel_orders(key, secret, symbol)
                 logging.info(f"{symbol} open orders cancel for close")
                 quantity = abs(positionAmt)
 
                 await close_position(key, secret, symbol, "SELL", quantity)
                 await asyncio.sleep(1.5)
+                position_cnt = 0
                 # 로그 기록
                 logging.info(f"{symbol} {interval} long position close")
 
         # 숏 포지션 종료
         elif positionAmt < 0:
+            position_cnt += 1
 
-            if last_row["ha_close"] > last_row["ha_open"]:
+            if last_row["ha_close"] > last_row["ha_open"] and position_cnt >= 3:
                 await cancel_orders(key, secret, symbol)
                 logging.info(f"{symbol} open orders cancel for close")
                 quantity = abs(positionAmt)
 
                 await close_position(key, secret, symbol, "BUY", quantity)
                 await asyncio.sleep(1.5)
+                position_cnt = 0
                 # 로그 기록
                 logging.info(f"{symbol} {interval} short position close")
 
@@ -101,6 +112,7 @@ async def main(symbol, leverage, interval):
         if positionAmt == 0 and (balance * (ratio / 100) < available):
             await cancel_orders(key, secret, symbol)
             logging.info(f"{symbol} open orders cancel")
+            position_cnt = 0
 
             # 롱
             if pred == 2 and prob >= prob_baseline and not t_short:
@@ -122,6 +134,7 @@ async def main(symbol, leverage, interval):
                     stopPrice,
                     profitPrice,
                 )
+                position_cnt = 1
                 # 로그 기록
                 logging.info(f"{symbol} {interval} long position open.")
 
@@ -145,6 +158,7 @@ async def main(symbol, leverage, interval):
                     stopPrice,
                     profitPrice,
                 )
+                position_cnt = 1
                 # 로그 기록
                 logging.info(f"{symbol} {interval} short position open.")
 
@@ -159,6 +173,7 @@ async def run_multiple_tasks():
     await asyncio.gather(
         main(symbols[0], leverage, interval),
         main(symbols[1], leverage, interval),
+        main(symbols[2], leverage, interval),
     )
 
 
