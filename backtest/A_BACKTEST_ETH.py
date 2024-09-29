@@ -59,7 +59,7 @@ for i in range(48, len(df)):
         current_price = df.at[i, "close"]
         position_cnt += 1
 
-        if df.at[i, "high"] >= stop_loss_price >= df.at[i, "low"]:
+        if stop_loss_price >= df.at[i, "low"]:
             loss = margin * leverage * abs(stop_loss_price - entry_price) / entry_price
 
             capital -= loss
@@ -91,7 +91,7 @@ for i in range(48, len(df)):
         current_price = df.at[i, "close"]
         position_cnt += 1
 
-        if df.at[i, "high"] >= stop_loss_price >= df.at[i, "low"]:
+        if df.at[i, "high"] >= stop_loss_price:
             loss = margin * leverage * abs(stop_loss_price - entry_price) / entry_price
 
             capital -= loss

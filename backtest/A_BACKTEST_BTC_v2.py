@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 from fetch import fetch_data
 
 from preprocess import cal_values, x_data_backtest_v2
@@ -22,12 +21,13 @@ take_profit_price = 0
 stop_loss_price = 0
 model_dir = f"../train/models/gb_classifier_{symbol}_v2.pkl"
 
-prob_baseline = 0.6
+prob_baseline = 0.7
 
 model = joblib.load(model_dir)
 
 # 익절, 손절 조건 설정
-sl_atr = 1.5
+sl_atr = 7
+tp_atr = 2
 
 # 백테스트 결과를 저장할 변수 초기화
 win_count = 0
@@ -45,7 +45,8 @@ for i in range(48, len(df)):
 
     X_data = x_data_backtest_v2(df, symbol, i)
     pred = model.predict(X_data)
-    prob = np.max(model.predict_proba(X_data), axis=1)
+    prob_lst = model.predict_proba(X_data)
+    prob = float(max(prob_lst[0]))
     t_long = trend_long(df, i)
     t_short = trend_short(df, i)
 
@@ -53,7 +54,7 @@ for i in range(48, len(df)):
         current_price = df.at[i, "close"]
         position_cnt += 1
 
-        if df.at[i, "high"] >= stop_loss_price >= df.at[i, "low"]:
+        if stop_loss_price >= df.at[i, "low"]:
             loss = margin * leverage * abs(stop_loss_price - entry_price) / entry_price
 
             capital -= loss
@@ -62,7 +63,18 @@ for i in range(48, len(df)):
             position = -1
             position_cnt = 0
 
-        elif df.at[i, "ha_close"] < df.at[i, "ha_open"]:
+        # elif df.at[i, "high"] >= take_profit_price:
+        #     profit = (
+        #         margin * leverage * abs(take_profit_price - entry_price) / entry_price
+        #     )
+        #
+        #     capital += profit
+        #     win_count += 1
+        #     margin = 0
+        #     position = -1
+        #     position_cnt = 0
+
+        elif pred != 2 and prob > prob_baseline and position_cnt > 3:
             profit_loss = (
                 margin * leverage * (current_price - entry_price) / entry_price
             )
@@ -85,7 +97,7 @@ for i in range(48, len(df)):
         current_price = df.at[i, "close"]
         position_cnt += 1
 
-        if df.at[i, "high"] >= stop_loss_price >= df.at[i, "low"]:
+        if df.at[i, "high"] >= stop_loss_price:
             loss = margin * leverage * abs(stop_loss_price - entry_price) / entry_price
 
             capital -= loss
@@ -94,7 +106,18 @@ for i in range(48, len(df)):
             position = -1
             position_cnt = 0
 
-        elif df.at[i, "ha_close"] > df.at[i, "ha_open"]:
+        # elif take_profit_price >= df.at[i, "low"]:
+        #     profit = (
+        #         margin * leverage * abs(take_profit_price - entry_price) / entry_price
+        #     )
+        #
+        #     capital += profit
+        #     win_count += 1
+        #     margin = 0
+        #     position = -1
+        #     position_cnt = 0
+
+        elif pred != 1 and prob > prob_baseline and position_cnt > 3:
             profit_loss = (
                 margin * leverage * (current_price - entry_price) / entry_price
             )
@@ -114,7 +137,7 @@ for i in range(48, len(df)):
                 position_cnt = 0
 
     if position == -1:  # 포지션이 없다면
-        if pred == 2 and not t_short and prob >= prob_baseline:
+        if pred == 2 and prob >= prob_baseline:
             position = 1
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
@@ -124,8 +147,10 @@ for i in range(48, len(df)):
 
             # 손절가 설정
             stop_loss_price = entry_price - sl_atr * ATR
+            # 익절가 설정
+            take_profit_price = entry_price + tp_atr * ATR
 
-        elif pred == 1 and not t_long and prob >= prob_baseline:
+        elif pred == 1 and prob >= prob_baseline:
             position = 0
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
@@ -135,6 +160,8 @@ for i in range(48, len(df)):
 
             # 손절가 설정
             stop_loss_price = entry_price + sl_atr * ATR
+            # 익절가 설정
+            take_profit_price = entry_price - tp_atr * ATR
 
 
 # 백테스트 결과 계산
