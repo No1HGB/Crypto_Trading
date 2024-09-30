@@ -112,6 +112,7 @@ def cal_values(df: pd.DataFrame) -> pd.DataFrame:
 
     df["d10"] = df["close"] / df["ma10"]
     df["d50"] = df["close"] / df["ma50"]
+    df["d100"] = df["close"] / df["ma100"]
     df["d200"] = df["close"] / df["ma200"]
     df["ed10"] = df["close"] / df["ema10"]
     df["ed20"] = df["close"] / df["ema20"]
@@ -190,17 +191,18 @@ def x_data(df: pd.DataFrame, symbol: str):
         "delta",
         "up_delta",
         "down_delta",
-        "d20",
-        "dup",
-        "dlow",
         "volume_delta",
-        "d10",
-        "d50",
-        "d200",
         "ed10",
         "ed20",
         "ed50",
+        "ed100",
         "ed200",
+        "dup",
+        "dlow",
+        "PH",
+        "dPHV",
+        "PL",
+        "dPLV",
     ]
 
     X_vector = df.iloc[-days:][use_cols].values.flatten()

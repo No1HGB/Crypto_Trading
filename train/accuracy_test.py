@@ -1,5 +1,4 @@
 from sklearn.metrics import accuracy_score
-from xgboost import XGBClassifier
 import numpy as np
 import joblib
 
@@ -13,9 +12,8 @@ model_dir = f"models/gb_classifier_{symbol}_v3.pkl"
 
 # 조정 변수
 data_num = 37700
-split_ratio = 0.9
+split_ratio = 0.97
 prob_baseline = 0.7
-is_save = False
 
 # 데이터 로드
 df = fetch_data(symbol, interval, data_num)
@@ -31,32 +29,14 @@ y_train = y_data[:split]
 X_test = X_data[split:]
 y_test = y_data[split:]
 print("Shape", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-# # 0이 아닌 경우 개수 체크
-# non_zero_indices = y_train != 0
-# y_train_non_zero = y_train[non_zero_indices]
-# print("Non-Zero Shape Train", y_train_non_zero.shape)
 
-# 모델 생성
-model = XGBClassifier(
-    max_depth=5,  # 트리 깊이 1-5
-    n_estimators=1200,  # 시행 횟수 100-1200
-    learning_rate=0.05,  # 학습률 0.01-0.1
-    random_state=42,
-)
-
-# 모델 학습
-model.fit(X_train, y_train)
+model = joblib.load(model_dir)
 
 # validation 예측
 y_pred_test = model.predict(X_test)
 y_prob_test = model.predict_proba(X_test)
 accuracy_test = accuracy_score(y_test, y_pred_test)
 print("Result", accuracy_test, len(y_test))
-
-# 모델 저장
-if is_save:
-    joblib.dump(model, model_dir)
-    print(f"{symbol} Model save success!")
 
 
 # 확률 슬라이싱

@@ -6,7 +6,7 @@ from backtest_logic import trend_long, trend_short
 import joblib
 
 # 초기값 설정
-symbol = "BTCUSDT"
+symbol = "ETHUSDT"
 interval = "1h"
 
 
@@ -19,7 +19,7 @@ position_cnt = 0
 entry_price = 0
 take_profit_price = 0
 stop_loss_price = 0
-model_dir = f"../train/models/gb_classifier_{symbol}_v3.pkl"
+model_dir = f"../train/models/gb_classifier_BTCUSDT_v3.pkl"
 
 prob_baseline = 0.7
 
@@ -33,7 +33,7 @@ tp_atr = 1.5
 win_count = 0
 loss_count = 0
 
-df: pd.DataFrame = fetch_data(symbol=symbol, interval=interval, numbers=3000)
+df: pd.DataFrame = fetch_data(symbol=symbol, interval=interval, numbers=1000)
 df = cal_values(df)
 print(df.shape)
 

@@ -30,16 +30,16 @@ async def main(symbol, leverage, interval):
     data_num = 337
     start = 0
     position_cnt = 0
-    model_dir = f"train/models/gb_classifier_BTCUSDT.pkl"
+    model_dir = f"train/models/gb_classifier_BTCUSDT_v3.pkl"
 
     if symbol == "BTCUSDT":
-        prob_baseline = 0.6
+        prob_baseline = 0.7
     elif symbol == "ETHUSDT":
-        prob_baseline = 0.6
+        prob_baseline = 0.7
     else:
         prob_baseline = 0.7
 
-    # 첫 시작 시 해당 심볼 레버리지 변경
+    # 첫 시작 시 레버리지 변경
     if start == 0:
         await change_leverage(key, secret, symbol, leverage)
         start += 1
@@ -50,25 +50,18 @@ async def main(symbol, leverage, interval):
         await wait_until_next_interval(interval=interval)
         logging.info(f"{symbol} {interval} next interval")
 
-        # BTC 데이터
-        df_btc = await fetch_data_async("BTCUSDT", interval, data_num)
-        df_btc = cal_values(df_btc)
+        # # BTC 데이터
+        # df_btc = await fetch_data_async("BTCUSDT", interval, data_num)
+        # df_btc = cal_values(df_btc)
 
         # 데이터 로드
         df = await fetch_data_async(symbol, interval, data_num)
         df = cal_values(df)
         last_row = df.iloc[-1]
 
-        long_cond: bool = (
-            last_row["ha_open"] < last_row["ha_close"] if symbol == "SOLUSDT" else True
-        )
-        short_cond: bool = (
-            last_row["ha_open"] > last_row["ha_close"] if symbol == "SOLUSDT" else True
-        )
-
         # 메인 예측 결과 가져오기
         model = joblib.load(model_dir)
-        X_data = x_data(df_btc, symbol)
+        X_data = x_data(df, symbol)
         pred = model.predict(X_data)
         prob = np.max(model.predict_proba(X_data), axis=1)
 
@@ -84,7 +77,10 @@ async def main(symbol, leverage, interval):
         if positionAmt > 0:
             position_cnt += 1
 
-            if last_row["ha_close"] < last_row["ha_open"] and position_cnt >= 3:
+            if pred == 1 and prob >= prob_baseline and position_cnt >= 4:
+                position_cnt = 1
+
+            if position_cnt == 4 and not (pred == 1 and prob >= prob_baseline):
                 await cancel_orders(key, secret, symbol)
                 logging.info(f"{symbol} open orders cancel for close")
                 quantity = abs(positionAmt)
@@ -99,7 +95,10 @@ async def main(symbol, leverage, interval):
         elif positionAmt < 0:
             position_cnt += 1
 
-            if last_row["ha_close"] > last_row["ha_open"] and position_cnt >= 3:
+            if pred == 0 and prob >= prob_baseline and position_cnt >= 4:
+                position_cnt = 1
+
+            if position_cnt == 4 and not (pred == 0 and prob >= prob_baseline):
                 await cancel_orders(key, secret, symbol)
                 logging.info(f"{symbol} open orders cancel for close")
                 quantity = abs(positionAmt)
@@ -122,7 +121,7 @@ async def main(symbol, leverage, interval):
             position_cnt = 0
 
             # 롱
-            if pred == 2 and prob >= prob_baseline and not t_short and long_cond:
+            if pred == 1 and prob >= prob_baseline and not t_short:
                 entryPrice = last_row["close"]
                 ATR = last_row["ATR"]
                 raw_quantity = balance * (ratio / 100) / entryPrice * leverage
@@ -146,7 +145,7 @@ async def main(symbol, leverage, interval):
                 logging.info(f"{symbol} {interval} long position open.")
 
             # 숏
-            elif pred == 1 and prob >= prob_baseline and not t_long and short_cond:
+            elif pred == 0 and prob >= prob_baseline and not t_long:
                 entryPrice = last_row["close"]
                 ATR = last_row["ATR"]
                 raw_quantity = balance * (ratio / 100) / entryPrice * leverage
@@ -180,7 +179,6 @@ async def run_multiple_tasks():
     await asyncio.gather(
         main(symbols[0], leverage, interval),
         main(symbols[1], leverage, interval),
-        main(symbols[2], leverage, interval),
     )
 
 
