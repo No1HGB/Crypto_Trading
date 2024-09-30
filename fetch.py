@@ -153,7 +153,8 @@ async def fetch_data_async(symbol, interval, numbers) -> pd.DataFrame:
     client = UMFutures()
 
     now = datetime.datetime.now(datetime.UTC)
-    end_time = int(now.timestamp() * 1000 - 1)
+    end_datetime = now.replace(minute=0, second=0, microsecond=0)
+    end_time = int(end_datetime.timestamp() * 1000 - 1)
 
     func = partial(
         client.klines,
@@ -193,30 +194,9 @@ async def fetch_data_async(symbol, interval, numbers) -> pd.DataFrame:
             inplace=True,
         )
 
-        current_time = datetime.datetime.now(datetime.UTC)
-        adjusted_time = current_time
-        # 5분 봉
-        if interval == "5m":
-            remainder = current_time.minute % 5
-            adjusted_time = current_time - timedelta(minutes=remainder)
-        # 15분 봉
-        elif interval == "15m":
-            remainder = current_time.minute % 15
-            adjusted_time = current_time - timedelta(minutes=remainder)
-        # 1시간 봉
-        elif interval == "1h":
-            adjusted_time = current_time.replace(minute=0)
-        # 4시간 봉
-        elif interval == "4h":
-            adjusted_hour = (current_time.hour // 4) * 4
-            adjusted_time = current_time.replace(hour=adjusted_hour, minute=0)
-        # 1일 봉
-        elif interval == "1d":
-            adjusted_time = current_time.replace(hour=0, minute=0)
-
         # 만약 현재 시간 봉 데이터가 존재하면 마지막 행 제거
         open_time = int(
-            adjusted_time.replace(second=0, microsecond=0).timestamp() * 1000
+            now.replace(minute=0, second=0, microsecond=0).timestamp() * 1000
         )
         if df.iloc[-1]["open_time"] == open_time:
             df.drop(df.index[-1], inplace=True)
