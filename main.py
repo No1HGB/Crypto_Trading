@@ -1,6 +1,5 @@
 import logging, asyncio
 import joblib
-import numpy as np
 
 import config
 from preprocess import cal_values, x_data
@@ -63,7 +62,8 @@ async def main(symbol, leverage, interval):
         model = joblib.load(model_dir)
         X_data = x_data(df, symbol)
         pred = model.predict(X_data)
-        prob = np.max(model.predict_proba(X_data), axis=1)
+        prob_lst = model.predict_proba(X_data)
+        prob = float(max(prob_lst[0]))
 
         # 추세 장
         t_long = trend_long(df)

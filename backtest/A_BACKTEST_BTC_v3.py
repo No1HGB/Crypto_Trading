@@ -33,7 +33,7 @@ tp_atr = 1.5
 win_count = 0
 loss_count = 0
 
-df: pd.DataFrame = fetch_data(symbol=symbol, interval=interval, numbers=3000)
+df: pd.DataFrame = fetch_data(symbol=symbol, interval=interval, numbers=400)
 df = cal_values(df)
 print(df.shape)
 
@@ -47,6 +47,7 @@ for i in range(48, len(df)):
     pred = model.predict(X_data)
     prob_lst = model.predict_proba(X_data)
     prob = float(max(prob_lst[0]))
+    print(prob)
     t_long = trend_long(df, i)
     t_short = trend_short(df, i)
 
