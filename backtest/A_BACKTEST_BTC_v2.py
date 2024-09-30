@@ -26,8 +26,8 @@ prob_baseline = 0.7
 model = joblib.load(model_dir)
 
 # 익절, 손절 조건 설정
-sl_atr = 7
-tp_atr = 2
+sl_atr = 5
+tp_atr = 5
 
 # 백테스트 결과를 저장할 변수 초기화
 win_count = 0
@@ -35,7 +35,10 @@ loss_count = 0
 
 df: pd.DataFrame = fetch_data(symbol=symbol, interval=interval, numbers=400)
 df = cal_values(df)
-print(df.shape)
+print(df["PH"])
+print(df["PHV"])
+print(df["PL"])
+print(df["PLV"])
 
 
 # 백테스트 실행
@@ -63,18 +66,18 @@ for i in range(48, len(df)):
             position = -1
             position_cnt = 0
 
-        # elif df.at[i, "high"] >= take_profit_price:
-        #     profit = (
-        #         margin * leverage * abs(take_profit_price - entry_price) / entry_price
-        #     )
-        #
-        #     capital += profit
-        #     win_count += 1
-        #     margin = 0
-        #     position = -1
-        #     position_cnt = 0
+        elif df.at[i, "high"] >= take_profit_price:
+            profit = (
+                margin * leverage * abs(take_profit_price - entry_price) / entry_price
+            )
 
-        elif pred != 2 and prob > prob_baseline and position_cnt > 3:
+            capital += profit
+            win_count += 1
+            margin = 0
+            position = -1
+            position_cnt = 0
+
+        elif position_cnt == 3:
             profit_loss = (
                 margin * leverage * (current_price - entry_price) / entry_price
             )
@@ -106,18 +109,18 @@ for i in range(48, len(df)):
             position = -1
             position_cnt = 0
 
-        # elif take_profit_price >= df.at[i, "low"]:
-        #     profit = (
-        #         margin * leverage * abs(take_profit_price - entry_price) / entry_price
-        #     )
-        #
-        #     capital += profit
-        #     win_count += 1
-        #     margin = 0
-        #     position = -1
-        #     position_cnt = 0
+        elif take_profit_price >= df.at[i, "low"]:
+            profit = (
+                margin * leverage * abs(take_profit_price - entry_price) / entry_price
+            )
 
-        elif pred != 1 and prob > prob_baseline and position_cnt > 3:
+            capital += profit
+            win_count += 1
+            margin = 0
+            position = -1
+            position_cnt = 0
+
+        elif position_cnt == 3:
             profit_loss = (
                 margin * leverage * (current_price - entry_price) / entry_price
             )

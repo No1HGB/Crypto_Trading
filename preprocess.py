@@ -1,5 +1,77 @@
 import numpy as np
 import pandas as pd
+from collections import deque
+
+
+def clean_deque(i, k, deq, df, key, isHigh):
+    if deq and deq[0] == i - k:
+        deq.popleft()
+    if isHigh:
+        while deq and df.iloc[i][key] > df.iloc[deq[-1]][key]:
+            deq.pop()
+    else:
+        while deq and df.iloc[i][key] < df.iloc[deq[-1]][key]:
+            deq.pop()
+
+
+def pivotPoints(pivot=None, data=None):
+    """
+    This function calculates the pivot points based on the pivot lenght.
+    These can be HH, LH , HL, LL values based on the adjacent pivots
+    which occur based on the length of the pivot.
+    """
+
+    data["PH"] = False
+    data["PHV"] = np.nan
+    data["PL"] = False
+    data["PLV"] = np.nan
+    keyHigh = "high"
+    keyLow = "low"
+    win_size = pivot * 2 + 1
+    deqHigh = deque()
+    deqLow = deque()
+    max_idx = 0
+    min_idx = 0
+    i = 0
+    j = pivot
+    pivot_low = None
+    pivot_high = None
+    for index, row in data.iterrows():
+        if i < win_size:
+            clean_deque(i, win_size, deqHigh, data, keyHigh, True)
+            clean_deque(i, win_size, deqLow, data, keyLow, False)
+            deqHigh.append(i)
+            deqLow.append(i)
+            if data.iloc[i][keyHigh] > data.iloc[max_idx][keyHigh]:
+                max_idx = i
+            if data.iloc[i][keyLow] < data.iloc[min_idx][keyLow]:
+                min_idx = i
+            if i == win_size - 1:
+                if data.iloc[max_idx][keyHigh] == data.iloc[j][keyHigh]:
+                    data.at[data.index[j], "PH"] = True
+                    pivot_high = data.iloc[j][keyHigh]
+                if data.iloc[min_idx][keyLow] == data.iloc[j][keyLow]:
+                    data.at[data.index[j], "PL"] = True
+                    pivot_low = data.iloc[j][keyLow]
+        if i >= win_size:
+            j += 1
+            clean_deque(i, win_size, deqHigh, data, keyHigh, True)
+            clean_deque(i, win_size, deqLow, data, keyLow, False)
+            deqHigh.append(i)
+            deqLow.append(i)
+            pivot_val = data.iloc[deqHigh[0]][keyHigh]
+            if pivot_val == data.iloc[j][keyHigh]:
+                data.at[data.index[j], "PH"] = True
+                pivot_high = data.iloc[j][keyHigh]
+            if data.iloc[deqLow[0]][keyLow] == data.iloc[j][keyLow]:
+                data.at[data.index[j], "PL"] = True
+                pivot_low = data.iloc[j][keyLow]
+
+        data.at[data.index[j], "PHV"] = pivot_high
+        data.at[data.index[j], "PLV"] = pivot_low
+        i = i + 1
+
+    return data
 
 
 def cal_values(df: pd.DataFrame) -> pd.DataFrame:
@@ -11,6 +83,7 @@ def cal_values(df: pd.DataFrame) -> pd.DataFrame:
 
     df["ma10"] = df["close"].rolling(window=10).mean()
     df["ma50"] = df["close"].rolling(window=50).mean()
+    df["ma100"] = df["close"].rolling(window=100).mean()
     df["ma200"] = df["close"].rolling(window=200).mean()
     df["ema10"] = df["close"].ewm(alpha=2 / 11, adjust=False).mean()
     df["ema20"] = df["close"].ewm(alpha=2 / 21, adjust=False).mean()
@@ -19,6 +92,12 @@ def cal_values(df: pd.DataFrame) -> pd.DataFrame:
     df["ema200"] = df["close"].ewm(alpha=2 / 201, adjust=False).mean()
 
     df["avg_price"] = (df["open"] + df["close"]) / 2
+
+    pivots = pivotPoints(pivot=2, data=df)
+    df["PH"] = pivots["PH"]
+    df["PHV"] = pivots["PHV"]
+    df["PL"] = pivots["PL"]
+    df["PLV"] = pivots["PLV"]
 
     # 필요한 값 계산
     df["delta"] = df["close"] / df["open"]
@@ -39,6 +118,9 @@ def cal_values(df: pd.DataFrame) -> pd.DataFrame:
     df["ed50"] = df["close"] / df["ema50"]
     df["ed100"] = df["close"] / df["ema100"]
     df["ed200"] = df["close"] / df["ema200"]
+
+    df["dPHV"] = df["PHV"] / df["close"]
+    df["dPLV"] = df["PLV"] / df["close"]
 
     # ATR 계산
     df["previous_close"] = df["close"].shift(1)
@@ -246,13 +328,13 @@ def make_data_v2(df, symbol):
         X_data.append(X_vector)
 
         if (
-            df.iloc[i + 1]["ha_open"] < df.iloc[i + 1]["ha_close"]
-            and df.iloc[i + 2]["ha_open"] < df.iloc[i + 2]["ha_close"]
+            df.iloc[i]["ha_open"] < df.iloc[i]["ha_close"]
+            and df.iloc[i + 1]["ha_open"] < df.iloc[i + 1]["ha_close"]
         ):
             y_data.append(2)
         elif (
-            df.iloc[i + 1]["ha_open"] > df.iloc[i + 1]["ha_close"]
-            and df.iloc[i + 2]["ha_open"] > df.iloc[i + 2]["ha_close"]
+            df.iloc[i]["ha_open"] > df.iloc[i]["ha_close"]
+            and df.iloc[i + 1]["ha_open"] > df.iloc[i + 1]["ha_close"]
         ):
             y_data.append(1)
         else:
@@ -294,6 +376,88 @@ def x_data_backtest_v2(df: pd.DataFrame, symbol: str, i):
 
 
 def make_data_v3(df, symbol):
+    X_data = []
+    y_data = []
+
+    if symbol == "BTCUSDT":
+        days = 48
+        n = 2
+    else:
+        days = 48
+        n = 2
+
+    for i in range(days, len(df) - n):
+        use_cols = [
+            "delta",
+            "up_delta",
+            "down_delta",
+            "volume_delta",
+            "ed10",
+            "ed20",
+            "ed50",
+            "ed100",
+            "ed200",
+            "dup",
+            "dlow",
+            "PH",
+            "dPHV",
+            "PL",
+            "dPLV",
+        ]
+
+        X_vector = df.iloc[i - days : i][use_cols].values.flatten()
+        X_data.append(X_vector)
+
+        if df.iloc[i]["open"] < df.iloc[i + 2]["close"]:
+            y_data.append(1)
+        elif df.iloc[i]["open"] > df.iloc[i + 2]["close"]:
+            y_data.append(0)
+        else:
+            y_data.append(-1)
+
+    X_data = np.array(X_data)
+    y_data = np.array(y_data)
+
+    slice_indices = y_data != -1
+    X_data = X_data[slice_indices]
+    y_data = y_data[slice_indices]
+
+    return X_data, y_data
+
+
+def x_data_backtest_v3(df: pd.DataFrame, symbol: str, i):
+    if symbol == "BTCUSDT":
+        days = 48
+    else:
+        days = 48
+
+    X_data = []
+    use_cols = [
+        "delta",
+        "up_delta",
+        "down_delta",
+        "volume_delta",
+        "ed10",
+        "ed20",
+        "ed50",
+        "ed100",
+        "ed200",
+        "dup",
+        "dlow",
+        "PH",
+        "dPHV",
+        "PL",
+        "dPLV",
+    ]
+
+    X_vector = df.iloc[i - days : i][use_cols].values.flatten()
+    X_data.append(X_vector)
+    X_data = np.array(X_data)
+
+    return X_data
+
+
+def make_data_v4(df, symbol):
     X_data = []
     y_data = []
 
@@ -370,7 +534,7 @@ def make_data_v3(df, symbol):
     # y_data_resampled = np.concatenate([y_data_0_resampled, y_data_non_0])
 
 
-def x_data_backtest_v3(df: pd.DataFrame, symbol: str, i):
+def x_data_backtest_v4(df: pd.DataFrame, symbol: str, i):
     if symbol == "BTCUSDT":
         days = 48
     else:

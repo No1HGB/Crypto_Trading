@@ -16,6 +16,9 @@ statsmodels = "*"
 matplotlib = "*"
 seaborn = "*"
 xgboost = "*"
+ta-lib = "*"
+pandas-ta = "*"
+setuptools = "*"
 
 [dev-packages]
 
