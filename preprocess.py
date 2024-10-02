@@ -27,7 +27,7 @@ def pivotPoints(pivot=None, data=None):
     data["PLV"] = np.nan
     keyHigh = "high"
     keyLow = "low"
-    win_size = pivot * 2 + 1
+    win_size = pivot + 1
     deqHigh = deque()
     deqLow = deque()
     max_idx = 0
@@ -401,10 +401,10 @@ def make_data_v3(df, symbol):
             "ed200",
             "dup",
             "dlow",
-            "PH",
-            "dPHV",
-            "PL",
-            "dPLV",
+            # "PH",
+            # "dPHV",
+            # "PL",
+            # "dPLV",
         ]
 
         X_vector = df.iloc[i - days : i][use_cols].values.flatten()
