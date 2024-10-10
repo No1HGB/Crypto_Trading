@@ -1,77 +1,5 @@
 import numpy as np
 import pandas as pd
-from collections import deque
-
-
-def clean_deque(i, k, deq, df, key, isHigh):
-    if deq and deq[0] == i - k:
-        deq.popleft()
-    if isHigh:
-        while deq and df.iloc[i][key] > df.iloc[deq[-1]][key]:
-            deq.pop()
-    else:
-        while deq and df.iloc[i][key] < df.iloc[deq[-1]][key]:
-            deq.pop()
-
-
-def pivotPoints(pivot=None, data=None):
-    """
-    This function calculates the pivot points based on the pivot lenght.
-    These can be HH, LH , HL, LL values based on the adjacent pivots
-    which occur based on the length of the pivot.
-    """
-
-    data["PH"] = False
-    data["PHV"] = np.nan
-    data["PL"] = False
-    data["PLV"] = np.nan
-    keyHigh = "high"
-    keyLow = "low"
-    win_size = pivot + 1
-    deqHigh = deque()
-    deqLow = deque()
-    max_idx = 0
-    min_idx = 0
-    i = 0
-    j = pivot
-    pivot_low = None
-    pivot_high = None
-    for index, row in data.iterrows():
-        if i < win_size:
-            clean_deque(i, win_size, deqHigh, data, keyHigh, True)
-            clean_deque(i, win_size, deqLow, data, keyLow, False)
-            deqHigh.append(i)
-            deqLow.append(i)
-            if data.iloc[i][keyHigh] > data.iloc[max_idx][keyHigh]:
-                max_idx = i
-            if data.iloc[i][keyLow] < data.iloc[min_idx][keyLow]:
-                min_idx = i
-            if i == win_size - 1:
-                if data.iloc[max_idx][keyHigh] == data.iloc[j][keyHigh]:
-                    data.at[data.index[j], "PH"] = True
-                    pivot_high = data.iloc[j][keyHigh]
-                if data.iloc[min_idx][keyLow] == data.iloc[j][keyLow]:
-                    data.at[data.index[j], "PL"] = True
-                    pivot_low = data.iloc[j][keyLow]
-        if i >= win_size:
-            j += 1
-            clean_deque(i, win_size, deqHigh, data, keyHigh, True)
-            clean_deque(i, win_size, deqLow, data, keyLow, False)
-            deqHigh.append(i)
-            deqLow.append(i)
-            pivot_val = data.iloc[deqHigh[0]][keyHigh]
-            if pivot_val == data.iloc[j][keyHigh]:
-                data.at[data.index[j], "PH"] = True
-                pivot_high = data.iloc[j][keyHigh]
-            if data.iloc[deqLow[0]][keyLow] == data.iloc[j][keyLow]:
-                data.at[data.index[j], "PL"] = True
-                pivot_low = data.iloc[j][keyLow]
-
-        data.at[data.index[j], "PHV"] = pivot_high
-        data.at[data.index[j], "PLV"] = pivot_low
-        i = i + 1
-
-    return data
 
 
 def cal_values(df: pd.DataFrame) -> pd.DataFrame:
@@ -79,25 +7,13 @@ def cal_values(df: pd.DataFrame) -> pd.DataFrame:
     df["std20"] = df["close"].rolling(window=20).std()
     df["upper_bb"] = df["ma20"] + 2 * df["std20"]
     df["lower_bb"] = df["ma20"] - 2 * df["std20"]
-    df["volume_ma50"] = df["volume"].rolling(window=50).mean()
+    df["volume_ma"] = df["volume"].rolling(window=50).mean()
 
-    df["ma10"] = df["close"].rolling(window=10).mean()
-    df["ma50"] = df["close"].rolling(window=50).mean()
-    df["ma100"] = df["close"].rolling(window=100).mean()
-    df["ma200"] = df["close"].rolling(window=200).mean()
     df["ema10"] = df["close"].ewm(alpha=2 / 11, adjust=False).mean()
     df["ema20"] = df["close"].ewm(alpha=2 / 21, adjust=False).mean()
     df["ema50"] = df["close"].ewm(alpha=2 / 51, adjust=False).mean()
     df["ema100"] = df["close"].ewm(alpha=2 / 101, adjust=False).mean()
     df["ema200"] = df["close"].ewm(alpha=2 / 201, adjust=False).mean()
-
-    df["avg_price"] = (df["open"] + df["close"]) / 2
-
-    pivots = pivotPoints(pivot=2, data=df)
-    df["PH"] = pivots["PH"]
-    df["PHV"] = pivots["PHV"]
-    df["PL"] = pivots["PL"]
-    df["PLV"] = pivots["PLV"]
 
     # 필요한 값 계산
     df["delta"] = df["close"] / df["open"]
@@ -108,20 +24,51 @@ def cal_values(df: pd.DataFrame) -> pd.DataFrame:
     df["dup"] = df["close"] / df["upper_bb"]
     df["dlow"] = df["close"] / df["lower_bb"]
 
-    df["volume_delta"] = df["volume"] / df["volume_ma50"]
+    df["volume_delta"] = df["volume"] / df["volume_ma"]
 
-    df["d10"] = df["close"] / df["ma10"]
-    df["d50"] = df["close"] / df["ma50"]
-    df["d100"] = df["close"] / df["ma100"]
-    df["d200"] = df["close"] / df["ma200"]
     df["ed10"] = df["close"] / df["ema10"]
     df["ed20"] = df["close"] / df["ema20"]
     df["ed50"] = df["close"] / df["ema50"]
     df["ed100"] = df["close"] / df["ema100"]
     df["ed200"] = df["close"] / df["ema200"]
 
-    df["dPHV"] = df["PHV"] / df["close"]
-    df["dPLV"] = df["PLV"] / df["close"]
+    # 피봇 포인트
+    df["prev_high"] = df["high"].shift(1)
+    df["prev_low"] = df["low"].shift(1)
+    df["prev_close"] = df["close"].shift(1)
+    df["pivot"] = (df["prev_high"] + df["prev_low"] + df["prev_close"]) / 3
+    df["R1"] = (2 * df["pivot"]) - df["prev_low"]
+    df["S1"] = (2 * df["pivot"]) - df["prev_high"]
+    df["R2"] = df["pivot"] + (df["prev_high"] - df["prev_low"])
+    df["S2"] = df["pivot"] - (df["prev_high"] - df["prev_low"])
+    df["R3"] = df["pivot"] + 2 * (df["prev_high"] - df["prev_low"])
+    df["S3"] = df["pivot"] - 2 * (df["prev_high"] - df["prev_low"])
+
+    df["pivot_delta"] = df["pivot"] / df["close"]
+    df["R1_delta"] = df["close"] / df["R1"]
+    df["S1_delta"] = df["close"] / df["S1"]
+    df["R2_delta"] = df["close"] / df["R2"]
+    df["S2_delta"] = df["close"] / df["S2"]
+    df["R3_delta"] = df["close"] / df["R3"]
+    df["S3_delta"] = df["close"] / df["S3"]
+
+    # Peak 계산
+    df["rolling_max_high"] = (
+        df["high"].rolling(window=100, min_periods=1).max().shift(1)
+    )
+    df["rolling_min_low"] = df["low"].rolling(window=100, min_periods=1).min().shift(1)
+    df["swing_high"] = df["high"][(df["high"] > df["rolling_max_high"])]
+    df["swing_low"] = df["low"][(df["low"] < df["rolling_min_low"])]
+    df["resistance"] = df["swing_high"].ffill()
+    df["support"] = df["swing_low"].ffill()
+    df.drop(
+        ["rolling_max_high", "rolling_min_low", "swing_high", "swing_low"],
+        axis=1,
+        inplace=True,
+    )
+
+    df["resistance_delta"] = df["close"] / df["resistance"]
+    df["support_delta"] = df["close"] / df["support"]
 
     # ATR 계산
     df["previous_close"] = df["close"].shift(1)
@@ -133,13 +80,10 @@ def cal_values(df: pd.DataFrame) -> pd.DataFrame:
 
     # 하이킨아시
     df["ha_close"] = (df["open"] + df["high"] + df["low"] + df["close"]) / 4
-
     df["ha_open"] = 0.0
     df.at[0, "ha_open"] = df.iloc[0]["open"]
-
     df["ha_high"] = 0.0
     df["ha_low"] = 0.0
-
     for i in range(1, len(df)):
         df.at[i, "ha_open"] = (df.at[i - 1, "ha_open"] + df.at[i - 1, "ha_close"]) / 2
         df.at[i, "ha_high"] = max(
@@ -148,31 +92,12 @@ def cal_values(df: pd.DataFrame) -> pd.DataFrame:
         df.at[i, "ha_low"] = min(
             df.at[i, "low"], df.at[i, "ha_open"], df.at[i, "ha_close"]
         )
-
     df.at[0, "ha_high"] = df.at[0, "high"]
     df.at[0, "ha_low"] = df.at[0, "low"]
 
-    # 하이킨아시 필요한 값
     df["ha_delta"] = df["ha_close"] / df["ha_open"]
     df["ha_up_delta"] = df["ha_high"] / df[["ha_open", "ha_close"]].max(axis=1)
     df["ha_down_delta"] = df["ha_low"] / df[["ha_open", "ha_close"]].min(axis=1)
-
-    # 가격 극대값과 극소값 찾기
-    price_max_peaks = (
-        (df["avg_price"] > df["avg_price"].shift(1))
-        & (df["avg_price"] > df["avg_price"].shift(-1))
-        & (df["avg_price"] > df["avg_price"].shift(2))
-        & (df["avg_price"] > df["avg_price"].shift(-2))
-    )
-
-    price_min_troughs = (
-        (df["avg_price"] < df["avg_price"].shift(1))
-        & (df["avg_price"] < df["avg_price"].shift(-1))
-        & (df["avg_price"] < df["avg_price"].shift(2))
-        & (df["avg_price"] < df["avg_price"].shift(-2))
-    )
-
-    df["peak"] = np.where(price_max_peaks, 1, np.where(price_min_troughs, 2, 0))
 
     df.dropna(axis=0, inplace=True, how="any")
     df.reset_index(drop=True, inplace=True)
@@ -399,6 +324,7 @@ def make_data_v3(df, symbol):
             "ed50",
             "ed100",
             "ed200",
+            "d20",
             "dup",
             "dlow",
             # "PH",
@@ -464,9 +390,9 @@ def make_data_v4(df, symbol):
     y_data = []
 
     if symbol == "BTCUSDT":
-        days = 672
+        days = 48
     else:
-        days = 672
+        days = 48
 
     for i in range(days, len(df)):
         use_cols = [
@@ -474,9 +400,26 @@ def make_data_v4(df, symbol):
             "up_delta",
             "down_delta",
             "volume_delta",
-            # "ed10",
-            # "ed20",
-            # "ed50",
+            "ed10",
+            "ed20",
+            "ed50",
+            "ed100",
+            "ed200",
+            "d20",
+            "dup",
+            "dlow",
+            "pivot_delta",
+            "R1_delta",
+            "S1_delta",
+            "R2_delta",
+            "S2_delta",
+            "R3_delta",
+            "S3_delta",
+            "resistance_delta",
+            "support_delta",
+            "ha_delta",
+            "ha_up_delta",
+            "ha_down_delta",
         ]
 
         base_df = df.iloc[i - days : i]
@@ -485,8 +428,8 @@ def make_data_v4(df, symbol):
 
         entry = base_df.iloc[-1]["close"]
         ATR = base_df.iloc[-1]["ATR"]
-        long_price = entry + 2 * ATR
-        short_price = entry - 2 * ATR
+        long_price = entry + 1.5 * ATR
+        short_price = entry - 1.5 * ATR
 
         future_df = df.iloc[i:]
         target = None
@@ -514,27 +457,6 @@ def make_data_v4(df, symbol):
     # 결과 반환
     return X_data, y_data
 
-    # # 0인 경우와 (1, 2인 경우) 따로 분리
-    # X_data_0 = X_data[y_data == 0]
-    # y_data_0 = y_data[y_data == 0]
-    # X_data_non_0 = X_data[y_data != 0]
-    # y_data_non_0 = y_data[y_data != 0]
-    #
-    # # non-zero 클래스 데이터 개수 계산
-    # n_non_zero = len(y_data_non_0)
-    #
-    # # 0 클래스 데이터 개수를 1,2 클래스 데이터의 절반으로 설정
-    # n_samples = int(n_non_zero / 2)
-    #
-    # # 0 클래스 데이터를 언더샘플링
-    # X_data_0_resampled, y_data_0_resampled = resample(
-    #     X_data_0, y_data_0, n_samples=n_samples, random_state=42
-    # )
-    #
-    # # 샘플링된 데이터와 원래 (1, 2) 데이터를 다시 합침
-    # X_data_resampled = np.concatenate([X_data_0_resampled, X_data_non_0])
-    # y_data_resampled = np.concatenate([y_data_0_resampled, y_data_non_0])
-
 
 def x_data_backtest_v4(df: pd.DataFrame, symbol: str, i):
     if symbol == "BTCUSDT":
@@ -548,9 +470,26 @@ def x_data_backtest_v4(df: pd.DataFrame, symbol: str, i):
         "up_delta",
         "down_delta",
         "volume_delta",
-        # "ed10",
-        # "ed20",
-        # "ed50",
+        "ed10",
+        "ed20",
+        "ed50",
+        "ed100",
+        "ed200",
+        "d20",
+        "dup",
+        "dlow",
+        "pivot_delta",
+        "R1_delta",
+        "S1_delta",
+        "R2_delta",
+        "S2_delta",
+        "R3_delta",
+        "S3_delta",
+        "resistance_delta",
+        "support_delta",
+        "ha_delta",
+        "ha_up_delta",
+        "ha_down_delta",
     ]
 
     X_vector = df.iloc[i - days : i][use_cols].values.flatten()

@@ -15,13 +15,14 @@ binance-connector = "*"
 statsmodels = "*"
 matplotlib = "*"
 seaborn = "*"
-xgboost = "*"
 ta-lib = "*"
 pandas-ta = "*"
 setuptools = "*"
+xgboost = "*"
 
 [dev-packages]
+black = "*"
 
 [requires]
 python_version = "3.12"
-python_full_version = "3.12.4"
+python_full_version = "3.12.3"

@@ -3,8 +3,7 @@
   <component name="Black">
     <option name="enabledOnReformat" value="true" />
     <option name="enabledOnSave" value="true" />
-    <option name="pathToExecutable" value="$PROJECT_DIR$/../.pyenv/shims/black" />
-    <option name="sdkName" value="Pipenv (crypto_trading)" />
+    <option name="sdkName" value="Pipenv (Crypto_Trading)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Pipenv (crypto_trading)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Pipenv (Crypto_Trading)" project-jdk-type="Python SDK" />
 </project>
