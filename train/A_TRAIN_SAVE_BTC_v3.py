@@ -12,10 +12,10 @@ interval = "1h"
 model_dir = f"models/gb_classifier_{symbol}_v3.pkl"
 
 # 조정 변수
-data_num = 37700
-split_ratio = 0.9
+data_num = 24000
+split_ratio = 0.97
 prob_baseline = 0.7
-is_save = False
+is_save = True
 
 # 데이터 로드
 df = fetch_data(symbol, interval, data_num)

@@ -29,3 +29,17 @@ def trend_short(df: pd.DataFrame, i) -> bool:
         ) and df.at[t, "close"] < df.at[t, "lower_bb"]
 
     return is_trend(df, i) or is_trend(df, i - 1) or is_trend(df, i - 2)
+
+
+def simple_trend_long(df: pd.DataFrame, i) -> bool:
+    return (
+        df.at[i, "ema10"] > df.at[i, "ema20"] > df.at[i, "ema50"]
+        or df.at[i, "ma10"] > df.at[i, "ma20"] > df.at[i, "ma50"]
+    )
+
+
+def simple_trend_short(df: pd.DataFrame, i) -> bool:
+    return (
+        df.at[i, "ema10"] < df.at[i, "ema20"] < df.at[i, "ema50"]
+        or df.at[i, "ma10"] < df.at[i, "ma20"] < df.at[i, "ma50"]
+    )

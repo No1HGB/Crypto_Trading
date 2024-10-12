@@ -9,12 +9,12 @@ from fetch import fetch_data
 # 변수 설정
 symbol = "BTCUSDT"
 interval = "1h"
-model_dir = f"models/gb_classifier_{symbol}_update.pkl"
+model_dir = f"models/gb_classifier_{symbol}.pkl"
 
 # 조정 변수
-data_num = 37700
-split_ratio = 0.99
-prob_baseline = 0.6
+data_num = 30000
+split_ratio = 0.95
+prob_baseline = 0.7
 is_save = False
 
 # 데이터 로드
@@ -31,10 +31,10 @@ y_train = y_data[:split]
 X_test = X_data[split:]
 y_test = y_data[split:]
 print("Shape", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-# 0이 아닌 경우 개수 체크
-non_zero_indices = y_data != 0
-y_data_non_zero = y_data[non_zero_indices]
-print("Non Zero Shape", y_data_non_zero.shape)
+# # 0이 아닌 경우 개수 체크
+# non_zero_indices = y_train != 0
+# y_train_non_zero = y_train[non_zero_indices]
+# print("Non-Zero Shape Train", y_train_non_zero.shape)
 
 # 모델 생성
 model = XGBClassifier(
@@ -51,9 +51,7 @@ model.fit(X_train, y_train)
 y_pred_test = model.predict(X_test)
 y_prob_test = model.predict_proba(X_test)
 accuracy_test = accuracy_score(y_test, y_pred_test)
-print(accuracy_test, len(y_test))
-# print(np.max(y_prob_test, axis=1))
-
+print("Result", accuracy_test, len(y_test))
 
 # 모델 저장
 if is_save:

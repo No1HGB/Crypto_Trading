@@ -12,10 +12,10 @@ interval = "1h"
 model_dir = f"models/gb_classifier_{symbol}_v4.pkl"
 
 # 조정 변수
-data_num = 37700
-split_ratio = 0.9
+data_num = 24000
+split_ratio = 0.97
 prob_baseline = 0.7
-is_save = False
+is_save = True
 
 # 데이터 로드
 df = fetch_data(symbol, interval, data_num)
@@ -31,10 +31,10 @@ y_train = y_data[:split]
 X_test = X_data[split:]
 y_test = y_data[split:]
 print("Shape", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-# 0이 아닌 경우 개수 체크
-non_zero_indices = y_train != 0
-y_train_non_zero = y_train[non_zero_indices]
-print("Non-Zero Shape Train", y_train_non_zero.shape)
+# # 0이 아닌 경우 개수 체크
+# non_zero_indices = y_train != 0
+# y_train_non_zero = y_train[non_zero_indices]
+# print("Non-Zero Shape Train", y_train_non_zero.shape)
 
 # 모델 생성
 model = XGBClassifier(

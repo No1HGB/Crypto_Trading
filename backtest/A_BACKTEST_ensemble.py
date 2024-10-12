@@ -1,12 +1,23 @@
 import pandas as pd
 from fetch import fetch_data
 
-from preprocess import cal_values, x_data_backtest_v3
-from backtest_logic import trend_long, trend_short
+from preprocess import (
+    cal_values,
+    x_data_backtest,
+    x_data_backtest_v2,
+    x_data_backtest_v3,
+    x_data_backtest_v4,
+)
+from backtest_logic import (
+    trend_long,
+    trend_short,
+    simple_trend_long,
+    simple_trend_short,
+)
 import joblib
 
 # 초기값 설정
-symbol = "ETHUSDT"
+symbol = "BTCUSDT"
 interval = "1h"
 
 
@@ -19,11 +30,17 @@ position_cnt = 0
 entry_price = 0
 take_profit_price = 0
 stop_loss_price = 0
-model_dir = f"../train/models/gb_classifier_BTCUSDT_v3.pkl"
+model_dir_1 = f"../train/models/gb_classifier_{symbol}.pkl"
+model_dir_2 = f"../train/models/gb_classifier_{symbol}_v2.pkl"
+model_dir_3 = f"../train/models/gb_classifier_{symbol}_v3.pkl"
+model_dir_4 = f"../train/models/gb_classifier_{symbol}_v4.pkl"
 
-prob_baseline = 0.7
+prob_baseline = 0.5
 
-model = joblib.load(model_dir)
+model_1 = joblib.load(model_dir_1)
+model_2 = joblib.load(model_dir_2)
+model_3 = joblib.load(model_dir_3)
+model_4 = joblib.load(model_dir_4)
 
 # 익절, 손절 조건 설정
 sl_atr = 1.5
@@ -33,7 +50,7 @@ tp_atr = 1.5
 win_count = 0
 loss_count = 0
 
-df: pd.DataFrame = fetch_data(symbol=symbol, interval=interval, numbers=1200)
+df: pd.DataFrame = fetch_data(symbol=symbol, interval=interval, numbers=500)
 df = cal_values(df)
 print(df.shape)
 
@@ -43,19 +60,34 @@ for i in range(48, len(df)):
     if capital <= 0:
         break
 
-    X_data = x_data_backtest_v3(df, symbol, i)
-    pred = model.predict(X_data)
-    prob_lst = model.predict_proba(X_data)
-    prob = float(max(prob_lst[0]))
+    X_data_1 = x_data_backtest(df, symbol, i)
+    pred_1 = model_1.predict(X_data_1)
+    prob_lst_1 = model_1.predict_proba(X_data_1)
+    prob_1 = float(max(prob_lst_1[0]))
+
+    X_data_2 = x_data_backtest_v2(df, symbol, i)
+    pred_2 = model_2.predict(X_data_2)
+    prob_lst_2 = model_2.predict_proba(X_data_2)
+    prob_2 = float(max(prob_lst_2[0]))
+
+    X_data_3 = x_data_backtest_v3(df, symbol, i)
+    pred_3 = model_3.predict(X_data_3)
+    prob_lst_3 = model_3.predict_proba(X_data_3)
+    prob_3 = float(max(prob_lst_3[0]))
+
+    X_data_4 = x_data_backtest_v4(df, symbol, i)
+    pred_4 = model_4.predict(X_data_4)
+    prob_lst_4 = model_4.predict_proba(X_data_4)
+    prob_4 = float(max(prob_lst_4[0]))
+
     t_long = trend_long(df, i)
     t_short = trend_short(df, i)
+    s_t_long = simple_trend_long(df, i)
+    s_t_short = simple_trend_short(df, i)
 
     if position == 1:
         current_price = df.at[i, "close"]
         position_cnt += 1
-
-        if pred == 1 and prob >= prob_baseline and position_cnt >= 4:
-            position_cnt = 1
 
         if stop_loss_price >= df.at[i, "low"]:
             loss = margin * leverage * abs(stop_loss_price - entry_price) / entry_price
@@ -77,31 +109,9 @@ for i in range(48, len(df)):
             position = -1
             position_cnt = 0
 
-        elif position_cnt == 4 and not (pred == 1 and prob >= prob_baseline):
-            profit_loss = (
-                margin * leverage * (current_price - entry_price) / entry_price
-            )
-
-            if profit_loss > 0:
-                capital += profit_loss
-                win_count += 1
-                margin = 0
-                position = -1
-                position_cnt = 0
-
-            else:
-                capital += profit_loss
-                loss_count += 1
-                margin = 0
-                position = -1
-                position_cnt = 0
-
     elif position == 0:
         current_price = df.at[i, "close"]
         position_cnt += 1
-
-        if pred == 0 and prob >= prob_baseline and position_cnt >= 4:
-            position_cnt = 1
 
         if df.at[i, "high"] >= stop_loss_price:
             loss = margin * leverage * abs(stop_loss_price - entry_price) / entry_price
@@ -123,27 +133,15 @@ for i in range(48, len(df)):
             position = -1
             position_cnt = 0
 
-        elif position_cnt == 4 and not (pred == 0 and prob >= prob_baseline):
-            profit_loss = (
-                margin * leverage * (current_price - entry_price) / entry_price
-            )
-
-            if profit_loss > 0:
-                capital += profit_loss
-                win_count += 1
-                margin = 0
-                position = -1
-                position_cnt = 0
-
-            else:
-                capital += profit_loss
-                loss_count += 1
-                margin = 0
-                position = -1
-                position_cnt = 0
-
     if position == -1:  # 포지션이 없다면
-        if pred == 1 and prob >= prob_baseline and not trend_short(df, i):
+        if (
+            pred_1 == 1
+            and pred_2 == 1
+            and pred_3 == 1
+            and pred_4 == 1
+            and not s_t_short
+            # and df.at[i, "close"] > df.at[i, "open"]
+        ):
             position = 1
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
@@ -156,7 +154,14 @@ for i in range(48, len(df)):
             # 익절가 설정
             take_profit_price = entry_price + tp_atr * ATR
 
-        elif pred == 0 and prob >= prob_baseline and not trend_long(df, i):
+        elif (
+            pred_1 == 0
+            and pred_2 == 0
+            and pred_3 == 0
+            and pred_4 == 0
+            and not s_t_long
+            # and df.at[i, "close"] < df.at[i, "open"]
+        ):
             position = 0
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
