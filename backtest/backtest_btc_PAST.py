@@ -1,7 +1,7 @@
 import pandas as pd
 from fetch import fetch_data
 from preprocess import cal_values
-from backtest_logic import bb_long, bb_short, trend_long, trend_short
+from backtest_logic import ha_long, ha_short, ha_trend_long, ha_trend_short
 
 # 초기값 설정
 initial_capital = 1000
@@ -14,14 +14,14 @@ take_profit_price = 0
 stop_loss_price = 0
 
 # 익절, 손절 조건 설정
-tp_atr = 1.5
+tp_atr = 2
 sl_atr = 1.5
 
 # 백테스트 결과를 저장할 변수 초기화
 win_count = 0
 loss_count = 0
 
-df: pd.DataFrame = fetch_data(symbol="BTCUSDT", interval="1h", numbers=700)
+df: pd.DataFrame = fetch_data(symbol="BTCUSDT", interval="1h", numbers=300)
 df = cal_values(df)
 print(df.shape)
 
@@ -30,10 +30,10 @@ for i in range(3, len(df)):
     if capital <= 0:
         break
 
-    b_long = bb_long(df, i)
-    b_short = bb_short(df, i)
-    t_long = trend_long(df, i)
-    t_short = trend_short(df, i)
+    h_long = ha_long(df, i, 1.4)
+    h_short = ha_short(df, i, 1.4)
+    h_trend_long = ha_trend_long(df, i, 1.4)
+    h_trend_short = ha_trend_short(df, i, 1.4)
 
     if position == 1:
         current_price = df.at[i, "close"]
@@ -56,7 +56,7 @@ for i in range(3, len(df)):
             margin = 0
             position = 0
 
-        elif b_short:
+        elif h_short or h_trend_short:
             profit_loss = (
                 margin * leverage * (current_price - entry_price) / entry_price
             )
@@ -93,7 +93,7 @@ for i in range(3, len(df)):
             margin = 0
             position = 0
 
-        elif b_long:
+        elif h_long or h_trend_long:
             profit_loss = (
                 margin * leverage * (entry_price - current_price) / entry_price
             )
@@ -110,7 +110,7 @@ for i in range(3, len(df)):
                 position = 0
 
     if position == 0:  # 포지션이 없다면
-        if (b_long and not t_short) or t_long:
+        if h_long or h_trend_long:
             position = 1
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)
@@ -122,7 +122,7 @@ for i in range(3, len(df)):
             # 익절가 설정
             take_profit_price = entry_price + tp_atr * ATR
 
-        elif (b_short and not t_long) or t_short:
+        elif h_short or h_trend_short:
             position = -1
             margin = capital / 5
             capital -= margin * leverage * (0.07 / 100)

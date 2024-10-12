@@ -43,3 +43,49 @@ def simple_trend_short(df: pd.DataFrame, i) -> bool:
         df.at[i, "ema10"] < df.at[i, "ema20"] < df.at[i, "ema50"]
         or df.at[i, "ma10"] < df.at[i, "ma20"] < df.at[i, "ma50"]
     )
+
+
+def ha_trend_long(df: pd.DataFrame, i, v_coff) -> bool:
+
+    return (
+        df.at[i, "ema10"] > df.at[i, "ema20"] > df.at[i, "ema50"]
+        and df.at[i, "volume"] >= df.at[i, "volume_ma"] * v_coff
+        and df.at[i, "ha_close"] > df.at[i, "ha_open"]
+        and (
+            df.at[i - 1, "ha_close"] < df.at[i - 1, "ha_open"]
+            or df.at[i - 2, "ha_close"] < df.at[i - 2, "ha_open"]
+        )
+    )
+
+
+def ha_trend_short(df: pd.DataFrame, i, v_coff) -> bool:
+
+    return (
+        df.at[i, "ema10"] < df.at[i, "ema20"] < df.at[i, "ema50"]
+        and df.at[i, "volume"] >= df.at[i, "volume_ma"] * v_coff
+        and df.at[i, "ha_close"] < df.at[i, "ha_open"]
+        and (
+            df.at[i - 1, "ha_close"] > df.at[i - 1, "ha_open"]
+            or df.at[i - 2, "ha_close"] > df.at[i - 2, "ha_open"]
+        )
+    )
+
+
+def ha_long(df: pd.DataFrame, i, v_coff) -> bool:
+    return (
+        df.at[i, "ha_close"] > df.at[i, "ha_open"]
+        and df.at[i, "volume"] >= df.at[i, "volume_ma"] * v_coff
+        and df.at[i, "open"] < max(df.at[i, "ema20"], df.at[i, "ema50"])
+        and df.at[i, "close"] > df.at[i, "open"]
+        and df.at[i, "avg_price"] > df.at[i - 1, "avg_price"]
+    )
+
+
+def ha_short(df: pd.DataFrame, i, v_coff) -> bool:
+    return (
+        df.at[i, "ha_close"] < df.at[i, "ha_open"]
+        and df.at[i, "volume"] >= df.at[i, "volume_ma"] * v_coff
+        and df.at[i, "open"] > min(df.at[i, "ema20"], df.at[i, "ema50"])
+        and df.at[i, "close"] < df.at[i, "open"]
+        and df.at[i, "avg_price"] < df.at[i - 1, "avg_price"]
+    )

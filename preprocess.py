@@ -10,6 +10,7 @@ def cal_values(df: pd.DataFrame) -> pd.DataFrame:
     df["volume_ma"] = df["volume"].rolling(window=50).mean()
     df["up"] = df[["low", "high"]].max(axis=1)
     df["down"] = df[["low", "high"]].min(axis=1)
+    df["avg_price"] = (df["open"] + df["close"]) / 2
 
     df["ma10"] = df["close"].rolling(window=10).mean()
     df["ma50"] = df["close"].rolling(window=50).mean()

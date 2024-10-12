@@ -50,7 +50,7 @@ tp_atr = 1.5
 win_count = 0
 loss_count = 0
 
-df: pd.DataFrame = fetch_data(symbol=symbol, interval=interval, numbers=500)
+df: pd.DataFrame = fetch_data(symbol=symbol, interval=interval, numbers=900)
 df = cal_values(df)
 print(df.shape)
 
